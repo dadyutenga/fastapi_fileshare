@@ -1,45 +1,50 @@
 {% extends "layout.html" %}
 {% block title %}Home - FileShare Portal{% endblock %}
 {% block content %}
-<div class="px-4 sm:px-0">
+<div class="px-3 sm:px-4 lg:px-0">
     {% if user %}
-        <!-- Upload Section for Logged-in Users -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        <!-- Mobile-Optimized Upload Section for Logged-in Users -->
+        <div class="bg-white shadow-sm sm:shadow rounded-lg p-4 sm:p-6">
+            <div class="text-center mb-6 sm:mb-8">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                     <i class="fas fa-cloud-upload-alt text-primary mr-2"></i>
                     Upload Your File
                 </h1>
-                <p class="text-gray-600">Share files securely with optional expiry time</p>
+                <p class="text-sm sm:text-base text-gray-600">Share files securely with optional expiry time</p>
             </div>
 
             <form id="uploadForm" action="/files/upload" method="post" enctype="multipart/form-data" class="max-w-lg mx-auto">
-                <div class="mb-6">
+                <!-- Mobile-Optimized File Drop Zone -->
+                <div class="mb-4 sm:mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-file mr-1"></i> Select File
                     </label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition-colors">
+                    <div class="mt-1 flex justify-center px-3 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition-colors">
                         <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <svg class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <div class="flex text-sm text-gray-600">
+                            <div class="flex text-xs sm:text-sm text-gray-600">
                                 <label for="file" class="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-blue-500">
                                     <span>Upload a file</span>
                                     <input id="file" name="file" type="file" class="sr-only" required>
                                 </label>
-                                <p class="pl-1">or drag and drop</p>
+                                <p class="pl-1 hidden sm:inline">or drag and drop</p>
                             </div>
-                            <p class="text-xs text-gray-500">Images, Documents, Videos, Audio, Archives up to 500MB</p>
+                            <p class="text-xs text-gray-500 px-2 sm:px-0">
+                                <span class="block sm:inline">Images, Documents, Videos,</span>
+                                <span class="block sm:inline">Audio, Archives up to 500MB</span>
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <!-- Mobile-Optimized Expiry Selection -->
+                <div class="mb-4 sm:mb-6">
                     <label for="ttl" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-clock mr-1"></i> Expiry Time (hours)
+                        <i class="fas fa-clock mr-1"></i> Expiry Time
                     </label>
-                    <select name="ttl" id="ttl" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                    <select name="ttl" id="ttl" class="block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                         <option value="0">Never expires</option>
                         <option value="1">1 hour</option>
                         <option value="24">24 hours</option>
@@ -48,42 +53,53 @@
                     </select>
                 </div>
 
+                <!-- Mobile-Optimized Sharing Settings -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-3">
                         <i class="fas fa-share-alt mr-1"></i> Sharing Settings
                     </label>
                     <div class="space-y-3">
-                        <div class="flex items-center">
-                            <input id="private" name="is_public" type="radio" value="false" checked 
-                                   class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-                                   onchange="updateSharingUI()">
-                            <label for="private" class="ml-3 block text-sm text-gray-700">
-                                <span class="font-medium">Private</span>
-                                <span class="text-gray-500 block">Only you can access this file</span>
-                            </label>
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="private" name="is_public" type="radio" value="false" checked 
+                                       class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                                       onchange="updateSharingUI()">
+                            </div>
+                            <div class="ml-3">
+                                <label for="private" class="block text-sm text-gray-700">
+                                    <span class="font-medium">Private</span>
+                                    <span class="text-gray-500 block text-xs sm:text-sm">Only you can access this file</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="flex items-center">
-                            <input id="public" name="is_public" type="radio" value="true" 
-                                   class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-                                   onchange="updateSharingUI()">
-                            <label for="public" class="ml-3 block text-sm text-gray-700">
-                                <span class="font-medium">Public</span>
-                                <span class="text-gray-500 block">Anyone with the link can access this file</span>
-                            </label>
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="public" name="is_public" type="radio" value="true" 
+                                       class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                                       onchange="updateSharingUI()">
+                            </div>
+                            <div class="ml-3">
+                                <label for="public" class="block text-sm text-gray-700">
+                                    <span class="font-medium">Public</span>
+                                    <span class="text-gray-500 block text-xs sm:text-sm">Anyone with the link can access this file</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <button type="button" onclick="handleUpload()" id="uploadBtn" class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105">
+                <!-- Mobile-Optimized Upload Button -->
+                <button type="button" onclick="handleUpload()" id="uploadBtn" 
+                        class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 text-sm sm:text-base">
                     <i class="fas fa-upload mr-2"></i>
                     Upload File
                 </button>
                 
-                <!-- Progress Bar -->
+                <!-- Mobile-Optimized Progress Bar -->
                 <div id="uploadProgress" class="mt-4 hidden">
-                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                        <span id="progressText">Uploading...</span>
-                        <span id="progressPercent">0%</span>
+                    <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-1">
+                        <span id="progressText" class="truncate mr-2">Uploading...</span>
+                        <span id="progressPercent" class="flex-shrink-0">0%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                         <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -92,50 +108,50 @@
             </form>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+        <!-- Mobile-Optimized Quick Stats -->
+        <div class="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-file text-gray-400 text-2xl"></i>
+                            <i class="fas fa-file text-gray-400 text-xl sm:text-2xl"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-3 sm:ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Mega Upload</dt>
-                                <dd class="text-lg font-medium text-gray-900">Up to 500MB</dd>
+                                <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Mega Upload</dt>
+                                <dd class="text-sm sm:text-lg font-medium text-gray-900">Up to 500MB</dd>
                             </dl>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-shield-alt text-green-400 text-2xl"></i>
+                            <i class="fas fa-shield-alt text-green-400 text-xl sm:text-2xl"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-3 sm:ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Secure</dt>
-                                <dd class="text-lg font-medium text-gray-900">Private Files</dd>
+                                <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Secure</dt>
+                                <dd class="text-sm sm:text-lg font-medium text-gray-900">Private Files</dd>
                             </dl>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg sm:col-span-1">
+                <div class="p-4 sm:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-eye text-blue-400 text-2xl"></i>
+                            <i class="fas fa-eye text-blue-400 text-xl sm:text-2xl"></i>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-3 sm:ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Preview</dt>
-                                <dd class="text-lg font-medium text-gray-900">Instant View</dd>
+                                <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Preview</dt>
+                                <dd class="text-sm sm:text-lg font-medium text-gray-900">Instant View</dd>
                             </dl>
                         </div>
                     </div>
@@ -143,47 +159,55 @@
             </div>
         </div>
     {% else %}
-        <!-- Welcome Section for Anonymous Users -->
+        <!-- Mobile-Optimized Welcome Section for Anonymous Users -->
         <div class="text-center">
-            <div class="bg-white shadow rounded-lg p-8 max-w-2xl mx-auto">
-                <div class="mb-8">
-                    <i class="fas fa-cloud-upload-alt text-6xl text-primary mb-4"></i>
-                    <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to FileShare Portal</h1>
-                    <p class="text-xl text-gray-600 mb-8">Secure, fast, and reliable file sharing platform for mega files up to 500MB</p>
+            <div class="bg-white shadow-sm sm:shadow rounded-lg p-4 sm:p-8 max-w-2xl mx-auto">
+                <div class="mb-6 sm:mb-8">
+                    <i class="fas fa-cloud-upload-alt text-4xl sm:text-6xl text-primary mb-3 sm:mb-4"></i>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
+                        Welcome to FileShare Portal
+                    </h1>
+                    <p class="text-base sm:text-xl text-gray-600 mb-6 sm:mb-8 px-2">
+                        Secure, fast, and reliable file sharing platform for mega files up to 500MB
+                    </p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="text-center">
-                        <div class="bg-blue-100 rounded-full p-3 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                            <i class="fas fa-lock text-primary text-xl"></i>
+                <!-- Mobile-Optimized Feature Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-blue-100 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                            <i class="fas fa-lock text-primary text-base sm:text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-900 mb-2">Secure Storage</h3>
-                        <p class="text-gray-600 text-sm">Your files are encrypted and stored securely</p>
+                        <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">Secure Storage</h3>
+                        <p class="text-gray-600 text-xs sm:text-sm">Your files are encrypted and stored securely</p>
                     </div>
-                    <div class="text-center">
-                        <div class="bg-green-100 rounded-full p-3 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                            <i class="fas fa-hdd text-green-600 text-xl"></i>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-green-100 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                            <i class="fas fa-hdd text-green-600 text-base sm:text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-900 mb-2">Mega Files</h3>
-                        <p class="text-gray-600 text-sm">Upload files up to 500MB with chunked upload</p>
+                        <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">Mega Files</h3>
+                        <p class="text-gray-600 text-xs sm:text-sm">Upload files up to 500MB with chunked upload</p>
                     </div>
-                    <div class="text-center">
-                        <div class="bg-purple-100 rounded-full p-3 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                            <i class="fas fa-eye text-purple-600 text-xl"></i>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="bg-purple-100 rounded-full p-2 sm:p-3 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                            <i class="fas fa-eye text-purple-600 text-base sm:text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-900 mb-2">File Preview</h3>
-                        <p class="text-gray-600 text-sm">Preview images, PDFs, videos and more</p>
+                        <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">File Preview</h3>
+                        <p class="text-gray-600 text-xs sm:text-sm">Preview images, PDFs, videos and more</p>
                     </div>
                 </div>
 
-                <div class="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-                    <a href="/register" class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-blue-700 transition-colors">
+                <!-- Mobile-Optimized CTA Buttons -->
+                <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center px-4 sm:px-0">
+                    <a href="/register" 
+                       class="w-full sm:w-auto inline-flex justify-center items-center px-4 sm:px-6 py-3 border border-transparent text-sm sm:text-base font-medium rounded-md text-white bg-primary hover:bg-blue-700 transition-colors">
                         <i class="fas fa-user-plus mr-2"></i>
-                        Get Started - Register
+                        <span class="hidden sm:inline">Get Started - </span>Register
                     </a>
-                    <a href="/login" class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <a href="/login" 
+                       class="w-full sm:w-auto inline-flex justify-center items-center px-4 sm:px-6 py-3 border border-gray-300 text-sm sm:text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <i class="fas fa-sign-in-alt mr-2"></i>
-                        Already have an account? Login
+                        <span class="hidden sm:inline">Already have account? </span>Login
                     </a>
                 </div>
             </div>
@@ -191,8 +215,29 @@
     {% endif %}
 </div>
 
+<!-- Mobile-Optimized Upload Progress Modal -->
+<div id="uploadModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-10 sm:top-20 mx-3 sm:mx-auto p-4 sm:p-5 border w-full max-w-sm sm:max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                <i class="fas fa-cloud-upload-alt text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="text-base sm:text-lg font-medium text-gray-900 mt-4">Uploading File</h3>
+            <div class="mt-4">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="modalProgressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs sm:text-sm text-gray-600 mt-2">
+                    <span id="modalProgressText">Preparing...</span>
+                    <span id="modalProgressPercent">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// File upload drag and drop functionality
+// File upload drag and drop functionality with mobile optimizations
 const dropZone = document.querySelector('.border-dashed');
 const fileInput = document.querySelector('#file');
 const uploadForm = document.getElementById('uploadForm');
@@ -202,35 +247,81 @@ const progressText = document.getElementById('progressText');
 const progressPercent = document.getElementById('progressPercent');
 const uploadBtn = document.getElementById('uploadBtn');
 
+// Mobile-optimized modal elements
+const uploadModal = document.getElementById('uploadModal');
+const modalProgressBar = document.getElementById('modalProgressBar');
+const modalProgressText = document.getElementById('modalProgressText');
+const modalProgressPercent = document.getElementById('modalProgressPercent');
+
 // Configuration - Updated for 500MB files
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks for better performance
 const MAX_FILE_SIZE_FOR_REGULAR_UPLOAD = 50 * 1024 * 1024; // 50MB threshold
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB max file size
 
+// Mobile detection
+const isMobile = window.innerWidth < 768;
+
 // Update sharing UI based on selection
 function updateSharingUI() {
-    // This function can be extended to show/hide sharing options
     const isPublic = document.querySelector('input[name="is_public"]:checked').value === 'true';
     console.log('File will be:', isPublic ? 'Public' : 'Private');
 }
 
+// Show upload modal for mobile
+function showUploadModal() {
+    if (isMobile && uploadModal) {
+        uploadModal.classList.remove('hidden');
+    }
+}
+
+// Hide upload modal
+function hideUploadModal() {
+    if (uploadModal) {
+        uploadModal.classList.add('hidden');
+    }
+}
+
+// Update progress (both inline and modal)
+function updateProgress(percent, text) {
+    const roundedPercent = Math.round(percent);
+    
+    // Update inline progress
+    if (progressBar) {
+        progressBar.style.width = percent + '%';
+        progressPercent.textContent = roundedPercent + '%';
+        progressText.textContent = text;
+    }
+    
+    // Update modal progress for mobile
+    if (modalProgressBar && isMobile) {
+        modalProgressBar.style.width = percent + '%';
+        modalProgressPercent.textContent = roundedPercent + '%';
+        modalProgressText.textContent = text;
+    }
+}
+
 if (dropZone && fileInput) {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
+    // Only enable drag and drop on non-mobile devices
+    if (!isMobile) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+    }
 
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
-    });
 
     function highlight(e) {
         dropZone.classList.add('border-primary', 'border-solid');
@@ -242,41 +333,44 @@ if (dropZone && fileInput) {
         dropZone.classList.add('border-dashed');
     }
 
-    dropZone.addEventListener('drop', handleDrop, false);
-
     function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
         fileInput.files = files;
         
         if (files.length > 0) {
-            const fileName = files[0].name;
-            dropZone.querySelector('span').textContent = fileName;
-            
-            // Check file size
-            if (files[0].size > MAX_FILE_SIZE) {
-                showError(`File too large! Maximum size is 500MB. Your file is ${(files[0].size / (1024 * 1024)).toFixed(1)}MB`);
-                fileInput.value = '';
-                dropZone.querySelector('span').textContent = 'Upload a file';
-            }
+            updateFileDisplay(files[0]);
         }
     }
 
-    // Show selected file name
+    // Show selected file name with mobile optimization
     fileInput.addEventListener('change', function(e) {
         if (this.files.length > 0) {
-            const file = this.files[0];
-            const fileName = file.name;
-            dropZone.querySelector('span').textContent = fileName;
-            
-            // Check file size
-            if (file.size > MAX_FILE_SIZE) {
-                showError(`File too large! Maximum size is 500MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
-                this.value = '';
-                dropZone.querySelector('span').textContent = 'Upload a file';
-            }
+            updateFileDisplay(this.files[0]);
         }
     });
+
+    function updateFileDisplay(file) {
+        const fileName = file.name;
+        const fileSize = file.size;
+        
+        // Truncate filename for mobile
+        let displayName = fileName;
+        if (isMobile && fileName.length > 25) {
+            const ext = fileName.split('.').pop();
+            const name = fileName.substring(0, fileName.lastIndexOf('.'));
+            displayName = name.substring(0, 20) + '...' + ext;
+        }
+        
+        dropZone.querySelector('span').textContent = displayName;
+        
+        // Check file size
+        if (fileSize > MAX_FILE_SIZE) {
+            showError(`File too large! Maximum size is 500MB. Your file is ${(fileSize / (1024 * 1024)).toFixed(1)}MB`);
+            fileInput.value = '';
+            dropZone.querySelector('span').textContent = 'Upload a file';
+        }
+    }
 }
 
 // Handle upload (regular or chunked based on file size)
@@ -300,8 +394,13 @@ async function handleUpload() {
     uploadBtn.disabled = true;
     uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
     
-    // Show progress bar
-    progressContainer.classList.remove('hidden');
+    // Show progress (modal for mobile, inline for desktop)
+    if (isMobile) {
+        showUploadModal();
+    } else {
+        progressContainer.classList.remove('hidden');
+    }
+    
     updateProgress(0, 'Preparing upload...');
 
     try {
@@ -397,7 +496,7 @@ async function chunkedUpload(file, ttl, isPublic) {
         const startData = await startResponse.json();
         const uploadId = startData.upload_id;
 
-        // Upload chunks with retry logic and better error handling
+        // Upload chunks with retry logic
         for (let chunkNumber = 0; chunkNumber < totalChunks; chunkNumber++) {
             const start = chunkNumber * CHUNK_SIZE;
             const end = Math.min(start + CHUNK_SIZE, fileSize);
@@ -420,7 +519,7 @@ async function chunkedUpload(file, ttl, isPublic) {
 
                     if (chunkResponse.ok) {
                         chunkUploaded = true;
-                        const progress = ((chunkNumber + 1) / totalChunks) * 90; // Reserve 10% for completion
+                        const progress = ((chunkNumber + 1) / totalChunks) * 90;
                         updateProgress(progress, `Uploading chunk ${chunkNumber + 1} of ${totalChunks}...`);
                     } else {
                         const errorData = await chunkResponse.json();
@@ -446,7 +545,7 @@ async function chunkedUpload(file, ttl, isPublic) {
                         }
                         throw new Error(`Failed to upload chunk ${chunkNumber + 1} after 3 retries: ${error.message}`);
                     }
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
         }
@@ -471,10 +570,9 @@ async function chunkedUpload(file, ttl, isPublic) {
             throw new Error(errorData.detail || 'Failed to complete chunked upload');
         }
 
-        const completeData = await completeResponse.json();
         updateProgress(100, 'Upload completed!');
-        
         showSuccess('Large file uploaded successfully!');
+        
         setTimeout(() => {
             window.location.href = '/files';
         }, 2000);
@@ -490,19 +588,13 @@ function resetUploadUI() {
     uploadBtn.disabled = false;
     uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload File';
     progressContainer.classList.add('hidden');
+    hideUploadModal();
 }
 
-// Update progress bar
-function updateProgress(percent, text) {
-    progressBar.style.width = percent + '%';
-    progressPercent.textContent = Math.round(percent) + '%';
-    progressText.textContent = text;
-}
-
-// Show success message
+// Mobile-optimized toast notifications
 function showSuccess(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    toast.className = 'fixed top-4 left-3 right-3 sm:left-auto sm:right-4 sm:left-auto bg-green-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50 text-sm';
     toast.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
     document.body.appendChild(toast);
     
@@ -511,10 +603,9 @@ function showSuccess(message) {
     }, 5000);
 }
 
-// Show error message
 function showError(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    toast.className = 'fixed top-4 left-3 right-3 sm:left-auto sm:right-4 sm:left-auto bg-red-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50 text-sm';
     toast.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
     document.body.appendChild(toast);
     
@@ -523,66 +614,23 @@ function showError(message) {
     }, 5000);
 }
 
-// File upload with chunked support
-async function uploadFile(file, ttl, isPublic) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('ttl', ttl);
-    formData.append('is_public', isPublic.toString());
-
-    try {
-        updateProgress(10, 'Starting upload...');
-        
-        const response = await fetch('/files/upload-api', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-            updateProgress(100, 'Upload completed!');
-            showSuccess(`File "${data.filename}" uploaded successfully!`);
-            
-            // Redirect after success
-            setTimeout(() => {
-                window.location.href = '/files';
-            }, 2000);
-        } else {
-            // Check if we should use chunked upload
-            if (data.use_chunked) {
-                updateProgress(0, 'File too large, switching to chunked upload...');
-                return await chunkedUpload(file, ttl, isPublic);
-            } else {
-                throw new Error(data.message || 'Upload failed');
-            }
+// Close modal when clicking outside (mobile)
+if (uploadModal) {
+    uploadModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideUploadModal();
+            resetUploadUI();
         }
-    } catch (error) {
-        console.error('Upload error:', error);
-        throw error;
-    }
+    });
 }
 
-// Main upload function with size detection
-async function handleFileUpload(file, ttl, isPublic) {
-    try {
-        // Show upload modal
-        showUploadModal();
-        
-        // Check file size and choose upload method
-        if (file.size > CHUNK_SIZE) {
-            // Use chunked upload for large files
-            await chunkedUpload(file, ttl, isPublic);
-        } else {
-            // Use regular upload for smaller files
-            await uploadFile(file, ttl, isPublic);
-        }
-        
-    } catch (error) {
-        hideUploadModal();
-        showError(error.message);
-    }
-}
+// Handle orientation change on mobile
+window.addEventListener('orientationchange', function() {
+    setTimeout(() => {
+        // Refresh mobile detection
+        window.location.reload();
+    }, 500);
+});
 </script>
 {% endblock %}
 

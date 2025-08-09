@@ -10,14 +10,58 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#3b82f6',
-                        secondary: '#8b5cf6',
+                        primary: '#F87060',
+                        secondary: '#102542',
+                        'coral': '#F87060',
+                        'dark-blue': '#102542',
+                        'coral-light': '#FFB5A3',
+                        'coral-dark': '#E63946',
                     }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom gradients and effects */
+        .coral-gradient {
+            background: linear-gradient(135deg, #F87060, #E63946);
+        }
+        .coral-gradient:hover {
+            background: linear-gradient(135deg, #E63946, #DC2626);
+        }
+        .dark-blue-gradient {
+            background: linear-gradient(135deg, #102542, #1F2937);
+        }
+        
+        /* Mobile menu animations */
+        .mobile-menu {
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Better hover effects */
+        .nav-link {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover {
+            transform: translateY(-1px);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 50%;
+            background: #F87060;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+    </style>
 </head>
 <body class="h-full bg-gray-50">
     <!-- Navigation -->
@@ -26,82 +70,121 @@
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="/" class="text-2xl font-bold text-primary">
+                        <a href="/" class="text-xl lg:text-2xl font-bold text-primary hover:text-coral-dark transition-colors">
                             <i class="fas fa-cloud-upload-alt mr-2"></i>
-                            FileShare
+                            <span class="hidden sm:inline">FileShare</span>
+                            <span class="sm:hidden">FS</span>
                         </a>
                     </div>
                     {% if user %}
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="/" class="nav-link border-transparent text-gray-600 hover:text-primary whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm lg:text-base">
                             <i class="fas fa-home mr-1"></i> Home
                         </a>
-                        <a href="/dashboard" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                        <a href="/dashboard" class="nav-link border-transparent text-gray-600 hover:text-primary whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm lg:text-base">
                             <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                         </a>
-                        <a href="/files" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                        <a href="/files" class="nav-link border-transparent text-gray-600 hover:text-primary whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm lg:text-base">
                             <i class="fas fa-folder mr-1"></i> My Files
                         </a>
                     </div>
                     {% endif %}
                 </div>
-                <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+                <div class="hidden md:ml-6 md:flex md:items-center space-x-4">
                     {% if user %}
-                        <span class="text-gray-700">Welcome, <strong>{{ user.username }}</strong></span>
-                        <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        <span class="text-gray-700 text-sm lg:text-base">Welcome, <strong class="text-primary">{{ user.username }}</strong></span>
+                        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md">
+                            <i class="fas fa-sign-out-alt mr-1"></i> 
+                            <span class="hidden lg:inline">Logout</span>
+                            <span class="lg:hidden">Exit</span>
                         </a>
                     {% else %}
-                        <a href="/login" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                        <a href="/login" class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm lg:text-base font-medium transition-colors">
                             <i class="fas fa-sign-in-alt mr-1"></i> Login
                         </a>
-                        <a href="/register" class="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                        <a href="/register" class="coral-gradient text-white px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md">
                             <i class="fas fa-user-plus mr-1"></i> Register
                         </a>
                     {% endif %}
                 </div>
                 <!-- Mobile menu button -->
-                <div class="sm:hidden flex items-center">
-                    <button type="button" class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary">
-                        <i class="fas fa-bars"></i>
+                <div class="md:hidden flex items-center">
+                    <button type="button" class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary transition-colors">
+                        <i class="fas fa-bars text-lg"></i>
                     </button>
                 </div>
             </div>
         </div>
         <!-- Mobile menu -->
-        <div class="mobile-menu hidden sm:hidden">
-            <div class="pt-2 pb-3 space-y-1">
+        <div class="mobile-menu hidden md:hidden bg-white border-t border-gray-200">
+            <div class="pt-2 pb-3 space-y-1 px-4">
                 {% if user %}
-                    <a href="/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
-                    <a href="/dashboard" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
-                    <a href="/files" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">My Files</a>
-                    <a href="/logout" class="border-transparent text-red-500 hover:text-red-700 hover:border-red-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Logout</a>
+                    <div class="border-b border-gray-100 pb-2 mb-2">
+                        <span class="text-sm text-gray-600">Welcome, <strong class="text-primary">{{ user.username }}</strong></span>
+                    </div>
+                    <a href="/" class="flex items-center text-gray-600 hover:text-primary hover:bg-gray-50 block px-3 py-3 rounded-lg text-base font-medium transition-colors">
+                        <i class="fas fa-home mr-3 w-5"></i> Home
+                    </a>
+                    <a href="/dashboard" class="flex items-center text-gray-600 hover:text-primary hover:bg-gray-50 block px-3 py-3 rounded-lg text-base font-medium transition-colors">
+                        <i class="fas fa-tachometer-alt mr-3 w-5"></i> Dashboard
+                    </a>
+                    <a href="/files" class="flex items-center text-gray-600 hover:text-primary hover:bg-gray-50 block px-3 py-3 rounded-lg text-base font-medium transition-colors">
+                        <i class="fas fa-folder mr-3 w-5"></i> My Files
+                    </a>
+                    <a href="/logout" class="flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 block px-3 py-3 rounded-lg text-base font-medium transition-colors">
+                        <i class="fas fa-sign-out-alt mr-3 w-5"></i> Logout
+                    </a>
                 {% else %}
-                    <a href="/login" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Login</a>
-                    <a href="/register" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Register</a>
+                    <a href="/login" class="flex items-center text-gray-600 hover:text-primary hover:bg-gray-50 block px-3 py-3 rounded-lg text-base font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt mr-3 w-5"></i> Login
+                    </a>
+                    <a href="/register" class="flex items-center coral-gradient text-white hover:shadow-md block px-3 py-3 rounded-lg text-base font-medium transition-all duration-200 mt-2">
+                        <i class="fas fa-user-plus mr-3 w-5"></i> Register
+                    </a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
     <!-- Main content -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-7xl mx-auto py-4 lg:py-6 px-4 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <div class="text-center text-gray-500 text-sm">
+    <footer class="bg-white border-t border-gray-200 mt-8 lg:mt-12">
+        <div class="max-w-7xl mx-auto py-4 lg:py-6 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-500 text-xs sm:text-sm">
                 <p>&copy; 2025 FileShare Portal. Secure file sharing made simple.</p>
+                <p class="mt-1 text-xs">Built with <i class="fas fa-heart text-red-400"></i> for secure file sharing</p>
             </div>
         </div>
     </footer>
 
     <script>
-        // Mobile menu toggle
+        // Mobile menu toggle with smooth animation
         document.querySelector('.mobile-menu-button').addEventListener('click', function() {
-            document.querySelector('.mobile-menu').classList.toggle('hidden');
+            const menu = document.querySelector('.mobile-menu');
+            menu.classList.toggle('hidden');
+            
+            // Toggle hamburger icon
+            const icon = this.querySelector('i');
+            if (menu.classList.contains('hidden')) {
+                icon.className = 'fas fa-bars text-lg';
+            } else {
+                icon.className = 'fas fa-times text-lg';
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.querySelector('.mobile-menu');
+            const button = document.querySelector('.mobile-menu-button');
+            
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.add('hidden');
+                button.querySelector('i').className = 'fas fa-bars text-lg';
+            }
         });
 
         // Auto-hide alerts after 5 seconds
@@ -113,6 +196,16 @@
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);
+
+        // Active navigation highlight
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('text-primary', 'border-primary');
+                link.classList.remove('border-transparent');
+            }
+        });
     </script>
 </body>
 </html>

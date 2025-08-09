@@ -1,60 +1,231 @@
 {% extends "layout.html" %}
 {% block title %}Login - FileShare Portal{% endblock %}
 {% block content %}
-<div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-        <div>
-            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary">
-                <i class="fas fa-sign-in-alt text-white text-xl"></i>
+<!-- Development Warning Banner -->
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 mb-4 lg:mb-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-yellow-400 text-base sm:text-lg"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-xs sm:text-sm lg:text-base text-yellow-700">
+                <span class="font-medium">Development Notice:</span>
+                This system is currently in development. Data may be lost during updates and maintenance periods. 
+                Please do not upload important files that you cannot afford to lose.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-full flex items-center justify-center py-4 lg:py-12 px-3 sm:px-6 lg:px-8">
+    <div class="w-full max-w-sm sm:max-w-md lg:max-w-lg space-y-6 lg:space-y-8">
+        <!-- Header Section -->
+        <div class="text-center">
+            <div class="mx-auto h-12 w-12 sm:h-16 sm:w-16 lg:h-20 lg:w-20 flex items-center justify-center rounded-full coral-gradient shadow-lg">
+                <i class="fas fa-sign-in-alt text-white text-lg sm:text-xl lg:text-2xl"></i>
             </div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <h2 class="mt-4 lg:mt-6 text-xl sm:text-2xl lg:text-4xl font-extrabold text-gray-900">
                 Sign in to your account
             </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                Or
-                <a href="/register" class="font-medium text-primary hover:text-blue-500">
-                    create a new account
+            <p class="mt-2 text-sm lg:text-lg text-gray-600">
+                Welcome back to FileShare Portal
+            </p>
+            <p class="mt-1 text-xs sm:text-sm lg:text-base text-gray-500">
+                Don't have an account?
+                <a href="/register" class="font-medium text-primary hover:text-coral-dark transition-colors">
+                    Create one here
                 </a>
             </p>
         </div>
         
-        <div class="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
+        <!-- Login Form -->
+        <div class="bg-white py-6 lg:py-10 px-4 sm:px-6 lg:px-10 xl:px-12 shadow-xl rounded-xl border border-gray-100">
             {% if error %}
-                <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    {{ error }}
+                <div class="mb-4 lg:mb-6 bg-red-50 border-l-4 border-red-400 p-3 lg:p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm lg:text-base text-red-700">{{ error }}</p>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
             
-                                <form action="/auth/login-web" method="POST" class="space-y-6" onsubmit="console.log('Form submitting to:', this.action);">
-                        <div>
-                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                            <div class="mt-1">
-                                <input id="username" name="username" type="text" autocomplete="username" required
-                                       class="w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="Enter your username">
+            <form action="/auth/login-web" method="POST" class="space-y-5 lg:space-y-7">
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="block text-sm lg:text-base font-semibold text-gray-700 mb-2 lg:mb-3">
+                        <i class="fas fa-user text-primary mr-2"></i>Username
+                    </label>
+                    <div class="relative">
+                        <input id="username" name="username" type="text" autocomplete="username" required
+                               class="block w-full px-4 lg:px-5 py-3 lg:py-4 text-sm lg:text-base border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
+                               placeholder="Enter your username">
+                        <div class="absolute inset-y-0 right-0 pr-3 lg:pr-4 flex items-center pointer-events-none">
+                            <i class="fas fa-user-circle text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm lg:text-base font-semibold text-gray-700 mb-2 lg:mb-3">
+                        <i class="fas fa-lock text-primary mr-2"></i>Password
+                    </label>
+                    <div class="relative">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required
+                               class="block w-full px-4 lg:px-5 py-3 lg:py-4 text-sm lg:text-base border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
+                               placeholder="Enter your password">
+                        <div class="absolute inset-y-0 right-0 pr-3 lg:pr-4 flex items-center pointer-events-none">
+                            <i class="fas fa-key text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-xs lg:text-sm text-gray-700">
+                            Remember me
+                        </label>
+                    </div>
+                    <div class="text-xs lg:text-sm">
+                        <a href="#" class="font-medium text-primary hover:text-coral-dark transition-colors">
+                            Forgot password?
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-2 lg:pt-4">
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-3 lg:py-4 px-4 lg:px-6 border border-transparent text-sm lg:text-lg font-semibold rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 coral-gradient">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3 lg:pl-4">
+                            <i class="fas fa-sign-in-alt text-orange-200 group-hover:text-white transition-colors"></i>
+                        </span>
+                        Sign In
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Alternative Login Options -->
+            <div class="mt-6 lg:mt-8">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm lg:text-base">
+                        <span class="px-3 lg:px-4 bg-white text-gray-500 font-medium">
+                            <i class="fas fa-shield-alt text-green-400 mr-1"></i>
+                            Secure Login
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Security Features -->
+                <div class="mt-4 lg:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                    <div class="flex items-center p-2 lg:p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-100">
+                        <div class="flex-shrink-0">
+                            <div class="h-6 w-6 lg:h-8 lg:w-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-lock text-green-600 text-xs lg:text-sm"></i>
                             </div>
                         </div>
-
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                            <div class="mt-1">
-                                <input id="password" name="password" type="password" autocomplete="current-password" required
-                                       class="w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="Enter your password">
+                        <div class="ml-2 lg:ml-3">
+                            <p class="text-xs lg:text-sm font-medium text-gray-900">Encrypted</p>
+                            <p class="text-xs text-gray-600">Secure connection</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-2 lg:p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+                        <div class="flex-shrink-0">
+                            <div class="h-6 w-6 lg:h-8 lg:w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-shield text-blue-600 text-xs lg:text-sm"></i>
                             </div>
                         </div>
-
-                        <div>
-                            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                                Sign in
-                            </button>
+                        <div class="ml-2 lg:ml-3">
+                            <p class="text-xs lg:text-sm font-medium text-gray-900">Private</p>
+                            <p class="text-xs text-gray-600">Data protection</p>
                         </div>
-                    </form>
+                    </div>
+                </div>
+            </div>
 
-   
+            <!-- Quick Access -->
+            <div class="mt-6 lg:mt-8 p-3 lg:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-primary text-sm lg:text-base"></i>
+                    </div>
+                    <div class="ml-2 lg:ml-3">
+                        <p class="text-xs lg:text-sm text-gray-600">
+                            <span class="font-medium">Quick Access:</span> Once logged in, you can upload files up to 500MB, 
+                            share them securely, and manage your file library with ease.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Options -->
+        <div class="text-center space-y-2 lg:space-y-3">
+            <p class="text-xs lg:text-sm text-gray-500">
+                Secure file sharing for individuals and teams
+            </p>
+            <div class="flex justify-center space-x-4 lg:space-x-6 text-xs lg:text-sm">
+                <a href="#" class="text-gray-400 hover:text-primary transition-colors">Help</a>
+                <span class="text-gray-300">•</span>
+                <a href="#" class="text-gray-400 hover:text-primary transition-colors">Security</a>
+                <span class="text-gray-300">•</span>
+                <a href="#" class="text-gray-400 hover:text-primary transition-colors">Contact</a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Custom Desert Sand & Dark Blue Color Scheme */
+.coral-gradient {
+    background: linear-gradient(135deg, #F87060, #E63946);
+}
+
+.coral-gradient:hover {
+    background: linear-gradient(135deg, #E63946, #DC2626);
+}
+
+/* Enhanced focus states */
+input:focus + div i {
+    color: #F87060 !important;
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.space-y-5 > * + *,
+.space-y-7 > * + * {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Checkbox styling */
+input[type="checkbox"]:checked {
+    background-color: #F87060;
+    border-color: #F87060;
+}
+
+input[type="checkbox"]:focus {
+    ring-color: #F87060;
+}
+</style>
 {% endblock %}
