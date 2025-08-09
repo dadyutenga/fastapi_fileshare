@@ -1,0 +1,277 @@
+{% extends "layout.html" %}
+{% block title %}Preview: {{ preview.original_filename }} - FileShare Portal{% endblock %}
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-6">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li>
+                    <div>
+                        <a href="/" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-home"></i>
+                            <span class="sr-only">Home</span>
+                        </a>
+                    </div>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <a href="/files" class="text-sm font-medium text-gray-500 hover:text-gray-700">My Files</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <span class="text-sm font-medium text-gray-900">Preview</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
+        <!-- File Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 mr-3">
+                        {% if preview.preview_type == 'image' %}
+                            <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-image text-green-600"></i>
+                            </div>
+                        {% elif preview.preview_type == 'pdf' %}
+                            <div class="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-pdf text-red-600"></i>
+                            </div>
+                        {% elif preview.preview_type == 'video' %}
+                            <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-video text-purple-600"></i>
+                            </div>
+                        {% elif preview.preview_type == 'audio' %}
+                            <div class="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-music text-yellow-600"></i>
+                            </div>
+                        {% elif preview.preview_type == 'archive' %}
+                            <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-archive text-orange-600"></i>
+                            </div>
+                        {% elif preview.preview_type == 'office' %}
+                            <div class="h-8 w-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-word text-indigo-600"></i>
+                            </div>
+                        {% else %}
+                            <div class="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file text-gray-600"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">{{ preview.original_filename }}</h1>
+                        <div class="flex items-center mt-1 text-sm text-gray-500 space-x-4">
+                            <span>
+                                <i class="fas fa-weight-hanging mr-1"></i>
+                                {% if preview.file_size > 1024*1024 %}
+                                    {{ "%.1f"|format(preview.file_size / (1024*1024)) }} MB
+                                {% elif preview.file_size > 1024 %}
+                                    {{ "%.1f"|format(preview.file_size / 1024) }} KB
+                                {% else %}
+                                    {{ preview.file_size }} B
+                                {% endif %}
+                            </span>
+                            <span>
+                                <i class="fas fa-download mr-1"></i>
+                                {{ preview.download_count }} downloads
+                            </span>
+                            <span>
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ preview.upload_time.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                            <span>
+                                {% if preview.is_public %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-globe mr-1"></i>Public
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                        <i class="fas fa-lock mr-1"></i>Private
+                                    </span>
+                                {% endif %}
+                            </span>
+                            {% if preview.content_type %}
+                                <span>
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ preview.content_type }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="/files/download/{{ preview.file_id }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                        <i class="fas fa-download mr-2"></i>
+                        Download
+                    </a>
+                    <button data-copy-url="{{ request.url_for('download_file', file_id=preview.file_id) }}"
+                            onclick="copyToClipboard(this.dataset.copyUrl)"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i class="fas fa-link mr-2"></i>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Preview Content -->
+        <div class="p-6">
+            {% if preview.can_preview %}
+                {% if preview.preview_type == 'image' %}
+                    <div class="text-center">
+                        <img src="/files/download/{{ preview.file_id }}" 
+                             alt="{{ preview.original_filename }}"
+                             class="max-w-full h-auto rounded-lg shadow-lg mx-auto"
+                             style="max-height: 80vh;">
+                    </div>
+                {% elif preview.preview_type == 'pdf' %}
+                    <div class="w-full h-screen">
+                        <iframe src="/files/download/{{ preview.file_id }}" 
+                                class="w-full h-full border rounded-lg"
+                                style="min-height: 600px;">
+                            <p>Your browser does not support PDFs. 
+                               <a href="/files/download/{{ preview.file_id }}" class="text-primary hover:text-blue-500">
+                                   Download the PDF
+                               </a>
+                            </p>
+                        </iframe>
+                    </div>
+                {% elif preview.preview_type == 'text' %}
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-medium text-gray-900">
+                                <i class="fas fa-file-alt mr-2"></i>
+                                Text Preview
+                            </h3>
+                            <span class="text-xs text-gray-500">
+                                {% if preview.preview_content and preview.preview_content.endswith('...') %}
+                                    Showing first 2000 characters
+                                {% else %}
+                                    Full content
+                                {% endif %}
+                            </span>
+                        </div>
+                        <pre class="whitespace-pre-wrap text-sm text-gray-800 font-mono bg-white p-4 rounded border overflow-auto max-h-96">{{ preview.preview_content or "No content to display" }}</pre>
+                    </div>
+                {% elif preview.preview_type == 'video' %}
+                    <div class="text-center">
+                        <video controls class="max-w-full h-auto rounded-lg shadow-lg mx-auto" style="max-height: 70vh;">
+                            <source src="/files/download/{{ preview.file_id }}" type="{{ preview.content_type }}">
+                            Your browser does not support the video tag.
+                            <p>Your browser does not support video playback. 
+                               <a href="/files/download/{{ preview.file_id }}" class="text-primary hover:text-blue-500">
+                                   Download the video file
+                               </a>
+                            </p>
+                        </video>
+                    </div>
+                {% elif preview.preview_type == 'audio' %}
+                    <div class="text-center py-8">
+                        <div class="bg-gradient-to-r from-purple-400 to-blue-500 rounded-lg p-8 mx-auto max-w-md">
+                            <div class="text-white mb-4">
+                                <i class="fas fa-music text-4xl mb-2"></i>
+                                <h3 class="text-lg font-semibold">{{ preview.original_filename }}</h3>
+                            </div>
+                            <audio controls class="w-full">
+                                <source src="/files/download/{{ preview.file_id }}" type="{{ preview.content_type }}">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                    </div>
+                {% elif preview.preview_type == 'archive' %}
+                    <div class="text-center py-12">
+                        <div class="h-16 w-16 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-archive text-orange-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Archive File</h3>
+                        <p class="text-gray-500 mb-4">{{ preview.preview_content or "Download to extract and view contents" }}</p>
+                        <a href="/files/download/{{ preview.file_id }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
+                            <i class="fas fa-download mr-2"></i>
+                            Download Archive
+                        </a>
+                    </div>
+                {% elif preview.preview_type == 'office' %}
+                    <div class="text-center py-12">
+                        <div class="h-16 w-16 bg-indigo-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-word text-indigo-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Office Document</h3>
+                        <p class="text-gray-500 mb-4">{{ preview.preview_content or "Download to view in your preferred office application" }}</p>
+                        <a href="/files/download/{{ preview.file_id }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <i class="fas fa-download mr-2"></i>
+                            Download Document
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file text-gray-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Preview not available</h3>
+                        <p class="text-gray-500 mb-4">This file type doesn't support preview</p>
+                        <a href="/files/download/{{ preview.file_id }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                            <i class="fas fa-download mr-2"></i>
+                            Download to view
+                        </a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <div class="h-16 w-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Preview Error</h3>
+                    <p class="text-gray-500 mb-4">{{ preview.preview_content or "Cannot generate preview for this file" }}</p>
+                    <a href="/files/download/{{ preview.file_id }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                        <i class="fas fa-download mr-2"></i>
+                        Download file
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast('Link copied to clipboard!', 'success');
+    }).catch(function(err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Link copied to clipboard!', 'success');
+    });
+}
+
+function showToast(message, type = 'success') {
+    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
+    
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+    toast.innerHTML = `<i class="fas ${icon} mr-2"></i>${message}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

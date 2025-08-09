@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+{% block title %}Upload Successful - FileShare Portal{% endblock %}
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="max-w-2xl mx-auto text-center">
+        <div class="bg-white shadow rounded-lg p-8">
+            <!-- Success Icon -->
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <i class="fas fa-check text-green-600 text-2xl"></i>
+            </div>
+            
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                Upload Successful!
+            </h1>
+            
+            <p class="text-lg text-gray-600 mb-8">
+                Your file <strong>{{ file.original_filename }}</strong> has been uploaded successfully.
+            </p>
+
+            <!-- File Info -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">File Size:</span>
+                        <span class="font-medium text-gray-900">
+                            {% if file.file_size > 1024*1024 %}
+                                {{ "%.1f"|format(file.file_size / (1024*1024)) }} MB
+                            {% elif file.file_size > 1024 %}
+                                {{ "%.1f"|format(file.file_size / 1024) }} KB
+                            {% else %}
+                                {{ file.file_size }} B
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Upload Time:</span>
+                        <span class="font-medium text-gray-900">{{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">File ID:</span>
+                        <span class="font-medium text-gray-900">{{ file.file_id }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Expiry:</span>
+                        <span class="font-medium text-gray-900">
+                            {% if file.ttl > 0 %}
+                                {{ file.ttl }} hours
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Link -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-link mr-1"></i> Share this download link:
+                </label>
+                <div class="flex items-center space-x-2">
+                    <input type="text" 
+                           value="{{ download_link }}" 
+                           id="downloadLink"
+                           readonly
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm bg-white">
+                    <button onclick="copyToClipboard()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-copy mr-1"></i> Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{{ preview_link }}" 
+                   class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-eye mr-2"></i>
+                    Preview File
+                </a>
+                <a href="{{ download_link }}" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                    <i class="fas fa-download mr-2"></i>
+                    Download File
+                </a>
+                <a href="/files" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                    <i class="fas fa-folder mr-2"></i>
+                    My Files
+                </a>
+            </div>
+
+            <!-- Upload Another -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <a href="/" 
+                   class="text-primary hover:text-blue-500 font-medium">
+                    <i class="fas fa-upload mr-1"></i>
+                    Upload Another File
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const linkInput = document.getElementById('downloadLink');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    navigator.clipboard.writeText(linkInput.value).then(function() {
+        showToast('Download link copied to clipboard!', 'success');
+    }).catch(function() {
+        // Fallback
+        document.execCommand('copy');
+        showToast('Download link copied to clipboard!', 'success');
+    });
+}
+
+function showToast(message, type = 'success') {
+    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
+    
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+    toast.innerHTML = `<i class="fas ${icon} mr-2"></i>${message}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,274 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard - FileShare Portal{% endblock %}
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+            <i class="fas fa-tachometer-alt text-primary mr-2"></i>
+            Dashboard
+        </h1>
+        <p class="text-gray-600 mt-2">Overview of your file sharing activity</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file text-blue-400 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Files</dt>
+                            <dd class="text-2xl font-bold text-gray-900">{{ total_files }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <a href="/files" class="font-medium text-primary hover:text-blue-500">
+                        View all files <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-hdd text-green-400 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Storage Used</dt>
+                            <dd class="text-2xl font-bold text-gray-900">
+                                {% if total_size > 1024*1024 %}
+                                    {{ "%.1f"|format(total_size / (1024*1024)) }} MB
+                                {% elif total_size > 1024 %}
+                                    {{ "%.1f"|format(total_size / 1024) }} KB
+                                {% else %}
+                                    {{ total_size }} B
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-gray-500">
+                        500 MB limit per file
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-download text-purple-400 text-3xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Downloads</dt>
+                            <dd class="text-2xl font-bold text-gray-900">{{ total_downloads }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-gray-500">
+                        Files shared successfully
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Files -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-clock text-gray-400 mr-2"></i>
+                Recent Files
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            {% if recent_files %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Downloads</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for file in recent_files %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center">
+                                            {% if file.content_type and file.content_type.startswith('image/') %}
+                                                <i class="fas fa-image text-blue-500 text-lg"></i>
+                                            {% elif file.content_type == 'application/pdf' %}
+                                                <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                                            {% elif file.content_type and file.content_type.startswith('video/') %}
+                                                <i class="fas fa-video text-purple-500 text-lg"></i>
+                                            {% elif file.content_type and file.content_type.startswith('audio/') %}
+                                                <i class="fas fa-music text-green-500 text-lg"></i>
+                                            {% elif file.content_type and file.content_type.startswith('text/') %}
+                                                <i class="fas fa-file-alt text-gray-500 text-lg"></i>
+                                            {% elif file.content_type in ['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'] %}
+                                                <i class="fas fa-file-archive text-orange-500 text-lg"></i>
+                                            {% elif file.content_type in ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] %}
+                                                <i class="fas fa-file-word text-blue-600 text-lg"></i>
+                                            {% elif file.content_type in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'] %}
+                                                <i class="fas fa-file-excel text-green-600 text-lg"></i>
+                                            {% else %}
+                                                <i class="fas fa-file text-gray-400 text-lg"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ file.original_filename }}</div>
+                                            <div class="text-sm text-gray-500">{{ file.content_type or 'Unknown type' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if file.file_size > 1024*1024 %}
+                                        {{ "%.1f"|format(file.file_size / (1024*1024)) }} MB
+                                    {% elif file.file_size > 1024 %}
+                                        {{ "%.1f"|format(file.file_size / 1024) }} KB
+                                    {% else %}
+                                        {{ file.file_size }} B
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if file.is_public %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-globe mr-1"></i>
+                                            Public
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-lock mr-1"></i>
+                                            Private
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-download mr-1"></i>
+                                        {{ file.download_count }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div>{{ file.upload_time.strftime('%Y-%m-%d') }}</div>
+                                    <div class="text-xs text-gray-400">{{ file.upload_time.strftime('%H:%M') }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Preview Button -->
+                                        <a href="/files/preview/{{ file.file_id }}" 
+                                           class="text-primary hover:text-blue-500 transition-colors"
+                                           title="Preview file">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        <!-- Download Button -->
+                                        <a href="/files/download/{{ file.file_id }}" 
+                                           class="text-green-600 hover:text-green-500 transition-colors"
+                                           title="Download file">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        
+                                        <!-- Share Button - Only for PUBLIC files -->
+                                        {% if file.is_public %}
+                                        <button onclick="copyToClipboard('{{ request.base_url }}files/download/{{ file.file_id }}')" 
+                                                class="text-purple-600 hover:text-purple-500 transition-colors"
+                                                title="Copy public share link">
+                                            <i class="fas fa-share"></i>
+                                        </button>
+                                        {% else %}
+                                        <!-- Show locked icon for private files -->
+                                        <span class="text-gray-400 cursor-not-allowed" 
+                                              title="Private file - no public sharing">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-6 flex justify-between items-center">
+                    <div class="text-sm text-gray-500">
+                        Showing {{ recent_files|length }} most recent files
+                    </div>
+                    <a href="/files" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-folder mr-2"></i>
+                        View All Files
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-file-upload text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No files uploaded yet</h3>
+                    <p class="text-gray-500 mb-6">Get started by uploading your first file to share with others</p>
+                    <a href="/" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>
+                        Upload Your First File
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        toast.innerHTML = '<i class="fas fa-check mr-2"></i>Public share link copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        toast.innerHTML = '<i class="fas fa-check mr-2"></i>Public share link copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    });
+}
+</script>
+{% endblock %}
