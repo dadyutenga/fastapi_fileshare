@@ -7,8 +7,15 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Database
-    DATABASE_URL: str = "sqlite:///./file_share.db"  # SQLite for simple deployment
+    # Database - MySQL Configuration
+    DATABASE_URL: str = "mysql+pymysql://username:password@localhost:3306/fileshare_db"
+    
+    # Individual MySQL connection parameters (for easier configuration)
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_DATABASE: str = "fileshare_db"
     
     # Upload settings
     UPLOAD_DIR: str = "uploads"
@@ -26,5 +33,14 @@ class Settings(BaseSettings):
     @property
     def allowed_extensions_list(self) -> List[str]:
         return [ext.strip() for ext in self.ALLOWED_EXTENSIONS.split(",")]
+    
+    @property
+    def mysql_database_url(self) -> str:
+        """Generate MySQL database URL from components"""
+        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
 settings = Settings()
+
+# Use MySQL URL if DATABASE_URL is not explicitly set to something else
+if settings.DATABASE_URL == "mysql+pymysql://username:password@localhost:3306/fileshare_db":
+    settings.DATABASE_URL = settings.mysql_database_url

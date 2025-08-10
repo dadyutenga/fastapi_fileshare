@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, BigInteger
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, BigInteger, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 
@@ -8,11 +8,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    username = Column(String(100), unique=True, index=True, nullable=False)  # Added length
+    hashed_password = Column(String(255), nullable=False)  # Added length for password hash
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    last_login = Column(DateTime)
+    last_login = Column(DateTime, nullable=True)
     
     # New fields for storage and download limits
     storage_limit = Column(BigInteger, default=5 * 1024 * 1024 * 1024)  # 5GB default
@@ -73,12 +73,12 @@ class File(Base):
     __tablename__ = "files"
 
     id = Column(Integer, primary_key=True, index=True)
-    file_id = Column(String, unique=True, index=True, nullable=False)
-    filename = Column(String, nullable=False)
-    original_filename = Column(String, nullable=False)
-    path = Column(String, nullable=False)
+    file_id = Column(String(36), unique=True, index=True, nullable=False)  # UUID is 36 chars
+    filename = Column(String(255), nullable=False)  # Added length for filename
+    original_filename = Column(String(255), nullable=False)  # Added length
+    path = Column(Text, nullable=False)  # Use TEXT for potentially long paths
     file_size = Column(BigInteger)
-    content_type = Column(String)
+    content_type = Column(String(100), nullable=True)  # Added length for MIME type
     upload_time = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)  # For consistency
     ttl = Column(Integer, default=0)  # 0 means no expiry
@@ -88,7 +88,7 @@ class File(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     
     # New field for file hash (SHA-256)
-    file_hash = Column(String, nullable=True)  # SHA-256 hash for integrity
+    file_hash = Column(String(64), nullable=True)  # SHA-256 is 64 hex chars
 
     owner = relationship("User", back_populates="files")
     
