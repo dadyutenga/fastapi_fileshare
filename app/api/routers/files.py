@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, BackgroundTasks, Query
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List, Dict
 import os
 import mimetypes
 import asyncio
+from datetime import datetime
 
 from app.api.deps import get_current_active_user, get_current_user_optional, get_db
 from app.db.models import User, File as FileModel
@@ -481,3 +482,162 @@ def delete_physical_file(file_path: str):
             print(f"Deleted physical file: {file_path}")
     except Exception as e:
         print(f"Error deleting physical file {file_path}: {e}")
+
+@router.get("/api/user-files")
+async def get_user_files_api(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    limit: int = Query(100, ge=1, le=500),  # Pagination limit (default 100, max 500)
+    offset: int = Query(0, ge=0),  # Pagination offset
+    file_type: Optional[str] = Query(None),  # Filter by file type (e.g., 'image', 'video')
+    search_query: Optional[str] = Query(None),  # Search by filename
+) -> Dict:
+    """Get list of files for the authenticated user - JSON API for mobile apps"""
+    try:
+        # Build the query
+        query = db.query(FileModel).filter(
+            FileModel.owner_id == current_user.id,
+            FileModel.is_active == True
+        )
+        
+        # Apply search filter if provided
+        if search_query:
+            query = query.filter(
+                FileModel.original_filename.ilike(f"%{search_query}%")
+            )
+        
+        # Apply file type filter if provided
+        if file_type:
+            if file_type.lower() == 'image':
+                query = query.filter(
+                    FileModel.content_type.like('image/%')
+                )
+            elif file_type.lower() == 'video':
+                query = query.filter(
+                    FileModel.content_type.like('video/%')
+                )
+            elif file_type.lower() == 'document':
+                query = query.filter(
+                    FileModel.content_type.in_([
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'text/plain'
+                    ])
+                )
+            elif file_type.lower() == 'audio':
+                query = query.filter(
+                    FileModel.content_type.like('audio/%')
+                )
+        
+        # Get total count for pagination info
+        total_count = query.count()
+        
+        # Apply pagination and get results
+        files = query.order_by(FileModel.created_at.desc()).offset(offset).limit(limit).all()
+        
+        # Build response data
+        file_list = []
+        for file in files:
+            # Check if file is expired
+            is_expired = file.is_expired() if hasattr(file, 'is_expired') else False
+            
+            # Categorize file type
+            file_category = categorize_file_type(file.content_type or '')
+            
+            # Format file size
+            formatted_size = format_file_size(file.file_size)
+            
+            file_data = {
+                "file_id": file.file_id,
+                "filename": file.original_filename,
+                "file_size": file.file_size,
+                "formatted_size": formatted_size,
+                "content_type": file.content_type,
+                "file_category": file_category,
+                "is_public": file.is_public,
+                "is_expired": is_expired,
+                "upload_date": file.created_at.isoformat() if file.created_at else None,
+                "ttl": file.ttl,
+                "download_url": f"/api/files/download/{file.file_id}",
+                "preview_url": f"/api/files/preview/{file.file_id}",
+            }
+            file_list.append(file_data)
+        
+        # Calculate pagination info
+        has_next = (offset + limit) < total_count
+        has_previous = offset > 0
+        
+        return JSONResponse({
+            "success": True,
+            "files": file_list,
+            "pagination": {
+                "total_count": total_count,
+                "limit": limit,
+                "offset": offset,
+                "has_next": has_next,
+                "has_previous": has_previous,
+                "current_page": (offset // limit) + 1,
+                "total_pages": (total_count + limit - 1) // limit
+            },
+            "filters": {
+                "file_type": file_type,
+                "search_query": search_query
+            },
+            "user_info": {
+                "user_id": current_user.id,
+                "username": current_user.username if hasattr(current_user, 'username') else None
+            }
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user files: {str(e)}")
+
+
+def categorize_file_type(content_type: str) -> str:
+    """Helper function to categorize file types"""
+    if not content_type:
+        return "unknown"
+    
+    content_type = content_type.lower()
+    
+    if content_type.startswith('image/'):
+        return "image"
+    elif content_type.startswith('video/'):
+        return "video"
+    elif content_type.startswith('audio/'):
+        return "audio"
+    elif content_type in [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+        'text/csv'
+    ]:
+        return "document"
+    elif content_type.startswith('text/'):
+        return "text"
+    elif content_type in ['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed']:
+        return "archive"
+    else:
+        return "other"
+
+
+def format_file_size(size_bytes: int) -> str:
+    """Helper function to format file size in human-readable format"""
+    if size_bytes == 0:
+        return "0 B"
+    
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    size = float(size_bytes)
+    
+    while size >= 1024.0 and i < len(size_names) - 1:
+        size /= 1024.0
+        i += 1
+    
+    return f"{size:.1f} {size_names[i]}"
