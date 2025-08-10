@@ -546,6 +546,19 @@ async def get_user_files_api(
 ) -> Dict:
     """Get list of files for the authenticated user - JSON API for mobile apps"""
     try:
+        # Helper function for Decimal conversion
+        def safe_convert(value, default=0):
+            """Convert Decimal/None values to JSON-serializable types"""
+            if value is None:
+                return default
+            try:
+                from decimal import Decimal
+                if isinstance(value, Decimal):
+                    return float(value)
+                return value
+            except:
+                return default
+        
         # Build the query
         query = db.query(FileModel).filter(
             FileModel.owner_id == current_user.id,
@@ -603,22 +616,23 @@ async def get_user_files_api(
             file_category = categorize_file_type(file.content_type or '')
             
             # Format file size
-            formatted_size = format_file_size(file.file_size)
+            formatted_size = format_file_size(safe_convert(file.file_size, 0))
             
             file_data = {
                 "file_id": file.file_id,
                 "filename": file.original_filename,
-                "file_size": file.file_size,
+                "file_size": safe_convert(file.file_size, 0),
                 "formatted_size": formatted_size,
                 "content_type": file.content_type,
                 "file_category": file_category,
-                "is_public": file.is_public,
-                "is_expired": is_expired,
+                "is_public": bool(file.is_public),
+                "is_expired": bool(is_expired),
                 "upload_date": file.created_at.isoformat() if file.created_at else None,
-                "ttl": file.ttl,
+                "ttl": safe_convert(file.ttl, 0),
                 "download_url": f"/api/files/download/{file.file_id}",
                 "preview_url": f"/api/files/preview/{file.file_id}",
-                "file_hash": file.file_hash
+                "file_hash": file.file_hash,
+                "download_count": safe_convert(file.download_count, 0)
             }
             file_list.append(file_data)
         
@@ -645,7 +659,7 @@ async def get_user_files_api(
             "user_stats": user_stats,
             "user_info": {
                 "user_id": current_user.id,
-                "username": current_user.username if hasattr(current_user, 'username') else None
+                "username": getattr(current_user, 'username', None)
             }
         })
         

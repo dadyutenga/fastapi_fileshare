@@ -311,23 +311,55 @@ class MySQLFileService:
             and_(File.owner_id == user_id, File.is_active == True)
         ).group_by(File.content_type).all()
         
+        # Convert Decimal values to float/int for JSON serialization
+        def safe_convert(value, default=0):
+            """Convert Decimal/None values to JSON-serializable types"""
+            if value is None:
+                return default
+            try:
+                # Convert Decimal to float, or return as-is for other types
+                from decimal import Decimal
+                if isinstance(value, Decimal):
+                    return float(value)
+                return value
+            except:
+                return default
+        
+        # Helper function to format file size
+        def format_file_size(size_bytes):
+            """Format file size in human-readable format"""
+            if size_bytes is None:
+                return "0 B"
+            
+            size_bytes = safe_convert(size_bytes, 0)
+            
+            for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+                if size_bytes < 1024.0:
+                    return f"{size_bytes:.1f} {unit}"
+                size_bytes /= 1024.0
+            return f"{size_bytes:.1f} PB"
+        
         return {
             "user_id": user_id,
-            "username": user.username,
-            "storage_limit": user.storage_limit,
-            "storage_used": user.storage_used,
-            "storage_available": user.storage_limit - user.storage_used,
-            "storage_percentage": user.get_storage_percentage(),
-            "daily_download_limit": user.daily_download_limit,
-            "daily_downloads_used": user.daily_downloads_used,
-            "daily_download_percentage": user.get_daily_download_percentage(),
-            "total_files": file_stats.total_files or 0,
-            "total_downloads": file_stats.total_downloads or 0,
+            "username": getattr(user, 'username', 'Unknown'),
+            "storage_limit": safe_convert(user.storage_limit, 5368709120),  # 5GB default
+            "formatted_storage_limit": format_file_size(user.storage_limit),
+            "storage_used": safe_convert(user.storage_used, 0),
+            "formatted_storage_used": format_file_size(user.storage_used),
+            "storage_available": safe_convert(user.storage_limit, 5368709120) - safe_convert(user.storage_used, 0),
+            "storage_percentage": safe_convert(user.get_storage_percentage(), 0.0),
+            "daily_download_limit": safe_convert(user.daily_download_limit, 1073741824),  # 1GB default
+            "formatted_download_limit": format_file_size(user.daily_download_limit),
+            "daily_downloads_used": safe_convert(user.daily_downloads_used, 0),
+            "daily_download_percentage": safe_convert(user.get_daily_download_percentage(), 0.0),
+            "total_files": safe_convert(file_stats.total_files, 0),
+            "total_downloads": safe_convert(file_stats.total_downloads, 0),
             "file_types": [
                 {
                     "content_type": ft.content_type or "Unknown",
-                    "count": ft.count,
-                    "size": ft.size
+                    "count": safe_convert(ft.count, 0),
+                    "size": safe_convert(ft.size, 0),
+                    "formatted_size": format_file_size(ft.size)
                 } for ft in file_types
             ]
         }
