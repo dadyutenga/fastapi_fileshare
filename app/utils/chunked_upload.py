@@ -5,7 +5,6 @@ import os
 import json
 import hashlib
 import time
-import secrets
 from typing import Optional, Dict, Any
 from fastapi import HTTPException
 from app.core.config import settings
@@ -30,7 +29,7 @@ class ChunkedUploadManager:
         """Get the path for upload metadata in user's temp directory"""
         user_temp_dir = self.get_user_temp_dir(user_id)
         return os.path.join(user_temp_dir, f"{upload_id}_info.json")
-
+    
     def save_chunk(self, upload_id: str, chunk_number: int, chunk_data: bytes, user_id: int) -> bool:
         """Save a chunk to disk in user's temp directory"""
         try:
@@ -41,7 +40,7 @@ class ChunkedUploadManager:
         except Exception as e:
             print(f"Error saving chunk {chunk_number} for upload {upload_id}: {e}")
             return False
-
+    
     def save_upload_info(self, upload_id: str, filename: str, total_chunks: int, file_size: int, user_id: int) -> bool:
         """Save upload metadata as JSON in user's temp directory"""
         try:
@@ -59,7 +58,7 @@ class ChunkedUploadManager:
         except Exception as e:
             print(f"Error saving upload info for {upload_id}: {e}")
             return False
-
+    
     def get_upload_info(self, upload_id: str, user_id: int) -> Optional[tuple]:
         """Get upload metadata from user's temp directory"""
         try:
@@ -73,7 +72,7 @@ class ChunkedUploadManager:
         except Exception as e:
             print(f"Error reading upload info for {upload_id}: {e}")
             return None
-
+    
     def is_upload_complete(self, upload_id: str, user_id: int) -> bool:
         """Check if all chunks have been uploaded"""
         try:
@@ -93,7 +92,7 @@ class ChunkedUploadManager:
         except Exception as e:
             print(f"Error checking upload completion for {upload_id}: {e}")
             return False
-
+    
     def assemble_file(self, upload_id: str, user_id: int) -> str:
         """Assemble all chunks into the final file in user's temp directory"""
         try:
@@ -135,7 +134,7 @@ class ChunkedUploadManager:
                 except:
                     pass
             raise HTTPException(status_code=500, detail=f"Assembly failed: {str(e)}")
-
+    
     def cleanup_upload(self, upload_id: str, user_id: int):
         """Clean up temporary files for an upload in user's temp directory"""
         try:
@@ -170,7 +169,7 @@ class ChunkedUploadManager:
                         pass
         except Exception as e:
             print(f"Error cleaning up upload {upload_id}: {e}")
-
+    
     def generate_upload_id(self, filename: str, file_size: int) -> str:
         """Generate a unique upload ID using SHA-256 (replaces MD5)"""
         return generate_upload_id(filename, file_size)

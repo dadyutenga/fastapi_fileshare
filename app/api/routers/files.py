@@ -13,7 +13,7 @@ from app.db.models import User, File as FileModel
 from app.services import file_service
 from app.schemas.file import FilePreview
 from app.utils.chunked_upload import chunked_upload_manager
-from app.utils.helpers import generate_file_id, get_user_upload_directory, calculate_file_hash
+from app.utils.helpers import generate_file_id, get_user_upload_path, calculate_file_hash
 from app.core.config import settings
 
 router = APIRouter()
@@ -102,7 +102,7 @@ async def upload_file_api(
             "message": f"Upload failed: {str(e)}"
         }, status_code=500)
 
-# Chunked Upload Endpoints for Large Files (Updated for user folders)
+# Chunked Upload Endpoints for Large Files (Updated for MySQL and User Folders)
 @router.post("/chunked-upload/start")
 async def start_chunked_upload(
     filename: str = Form(...),
@@ -115,15 +115,19 @@ async def start_chunked_upload(
 ):
     """Start a chunked upload session with validation and storage limit checking"""
     try:
+        # Check user storage limit
+        if not current_user.check_storage_available(file_size):
+            raise HTTPException(
+                status_code=413, 
+                detail="Storage limit exceeded. Please delete some files or upgrade your plan."
+            )
+        
         # Validate file size
         if file_size > settings.MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=413, 
                 detail=f"File too large. Maximum size is {settings.MAX_FILE_SIZE // (1024*1024)}MB"
             )
-        
-        # Check user storage limit
-        file_service.check_user_storage_limit(db, current_user.id, file_size)
         
         # Validate file extension
         file_ext = os.path.splitext(filename)[1].lower()
@@ -214,7 +218,7 @@ async def complete_chunked_upload(
         temp_assembled_path = chunked_upload_manager.assemble_file(upload_id, current_user.id)
         
         # Get user's upload directory
-        user_upload_dir = get_user_upload_directory(current_user.id)
+        user_upload_dir = get_user_upload_path(current_user.id)
         
         # Generate file ID and create final path in user's directory
         file_id = generate_file_id()
@@ -273,8 +277,7 @@ async def complete_chunked_upload(
             "message": "Large file uploaded successfully",
             "filename": original_filename,
             "file_size": file_size,
-            "is_public": is_public_bool,
-            "file_hash": file_hash
+            "is_public": is_public_bool
         })
         
     except Exception as e:
@@ -355,10 +358,14 @@ async def delete_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Delete file (user can only delete own files)"""
+    """Delete file (user can only delete own files) - Fixed async issues"""
     try:
-        file_service.delete_file(db, file_id, current_user.id)
+        # Use the fixed delete function
+        result = file_service.delete_file(db, file_id, current_user.id)
+        
+        # Redirect to files page with success
         return RedirectResponse(url="/files", status_code=302)
+        
     except HTTPException as e:
         return templates.TemplateResponse(
             "error.html", {
@@ -367,6 +374,36 @@ async def delete_file(
                 "user": current_user
             }
         )
+    except Exception as e:
+        return templates.TemplateResponse(
+            "error.html", {
+                "request": request, 
+                "error": f"Unexpected error: {str(e)}",
+                "user": current_user
+            }
+        )
+
+@router.delete("/api/delete/{file_id}")
+async def delete_file_api(
+    file_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Delete file API endpoint - Returns JSON response"""
+    try:
+        result = file_service.delete_file(db, file_id, current_user.id)
+        return JSONResponse(result)
+        
+    except HTTPException as e:
+        return JSONResponse({
+            "success": False,
+            "message": e.detail
+        }, status_code=e.status_code)
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "message": f"Unexpected error: {str(e)}"
+        }, status_code=500)
 
 @router.post("/toggle-privacy/{file_id}", response_class=HTMLResponse)
 async def toggle_file_privacy(

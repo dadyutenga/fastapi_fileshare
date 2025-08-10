@@ -9,6 +9,7 @@ import hashlib
 import shutil
 import asyncio
 import logging
+import threading
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
@@ -184,8 +185,15 @@ class MySQLFileService:
         return file.path, file
     
     @staticmethod
+    def get_user_files(db: Session, user_id: int, limit: int = 100, offset: int = 0) -> List[File]:
+        """Get user files with pagination"""
+        return db.query(File).filter(
+            and_(File.owner_id == user_id, File.is_active == True)
+        ).order_by(File.created_at.desc()).offset(offset).limit(limit).all()
+    
+    @staticmethod
     def delete_file_with_storage_update(db: Session, file_id: str, user_id: int) -> Dict[str, Any]:
-        """Delete file and update user storage usage"""
+        """Delete file and update user storage usage - Fixed async issues"""
         
         file = db.query(File).filter(
             and_(
@@ -198,34 +206,84 @@ class MySQLFileService:
         if not file:
             raise HTTPException(status_code=404, detail="File not found")
         
+        # Store file path before soft delete
+        file_path = file.path
+        file_name = file.original_filename
+        file_size = file.file_size
+        
         # Soft delete in database
         file.is_active = False
         
         # Update user storage usage
         user = db.query(User).filter(User.id == user_id).first()
         if user:
-            user.remove_storage_usage(file.file_size)
+            user.remove_storage_usage(file_size)
         
+        # Commit database changes immediately
         db.commit()
         
-        # Schedule physical file deletion
-        def cleanup_file():
+        # Schedule physical file deletion in a separate thread (not async)
+        def cleanup_file_sync():
+            """Synchronous file cleanup function"""
             try:
-                if os.path.exists(file.path):
-                    os.remove(file.path)
-                    logger.info(f"Physical file deleted: {file.path}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Physical file deleted: {file_path}")
             except Exception as e:
-                logger.error(f"Error deleting physical file {file.path}: {e}")
+                logger.error(f"Error deleting physical file {file_path}: {e}")
         
-        # Delete file in background
-        asyncio.create_task(asyncio.get_event_loop().run_in_executor(thread_pool, cleanup_file))
+        # Use thread pool to delete file without blocking
+        threading.Thread(target=cleanup_file_sync, daemon=True).start()
         
         return {
             "success": True,
-            "message": f"File '{file.original_filename}' deleted successfully",
+            "message": f"File '{file_name}' deleted successfully",
             "file_id": file_id,
-            "storage_freed": file.file_size
+            "storage_freed": file_size
         }
+    
+    @staticmethod
+    def get_file_preview(db: Session, file_id: str, user_id: Optional[int] = None) -> FilePreview:
+        """Get file preview information"""
+        file = db.query(File).filter(
+            and_(File.file_id == file_id, File.is_active == True)
+        ).first()
+        
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check access permissions
+        if not file.is_public:
+            if not user_id or file.owner_id != user_id:
+                raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Determine preview type based on content type
+        preview_type = "other"
+        if file.content_type:
+            if file.content_type.startswith('image/'):
+                preview_type = "image"
+            elif file.content_type.startswith('video/'):
+                preview_type = "video"
+            elif file.content_type.startswith('audio/'):
+                preview_type = "audio"
+            elif file.content_type == 'application/pdf':
+                preview_type = "pdf"
+            elif file.content_type.startswith('text/'):
+                preview_type = "text"
+        
+        return FilePreview(
+            file_id=file.file_id,
+            filename=file.filename,
+            original_filename=file.original_filename,
+            file_size=file.file_size,
+            content_type=file.content_type,
+            upload_time=file.upload_time,
+            download_count=file.download_count,
+            is_public=file.is_public,
+            preview_type=preview_type,
+            preview_content=None,
+            can_preview=preview_type != "other"
+        )
     
     @staticmethod
     def get_user_storage_stats(db: Session, user_id: int) -> Dict[str, Any]:
@@ -277,8 +335,67 @@ class MySQLFileService:
 # Export the main functions for backward compatibility
 mysql_file_service = MySQLFileService()
 
-# Legacy function names
+# Legacy function names for compatibility
 save_file_async = mysql_file_service.save_file_with_limits
 get_file_path = mysql_file_service.get_file_with_download_limit
 delete_file = mysql_file_service.delete_file_with_storage_update
 get_user_stats = mysql_file_service.get_user_storage_stats
+get_file_preview = mysql_file_service.get_file_preview
+
+# Add the missing function
+get_user_files = mysql_file_service.get_user_files
+
+# Additional compatibility functions
+def save_file(db: Session, file: UploadFile, ttl: int, owner_id: int, is_public: bool = False) -> File:
+    """Synchronous wrapper for save_file_async"""
+    import asyncio
+    return asyncio.run(save_file_async(db, file, ttl, owner_id, is_public))
+
+def get_file_info(db: Session, file_id: str, user_id: Optional[int] = None) -> File:
+    """Get file info without download tracking"""
+    file = db.query(File).filter(
+        and_(File.file_id == file_id, File.is_active == True)
+    ).first()
+    
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Check access permissions
+    if not file.is_public:
+        if not user_id or file.owner_id != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    return file
+
+def toggle_file_privacy(db: Session, file_id: str, user_id: int) -> File:
+    """Toggle file privacy setting"""
+    file = db.query(File).filter(
+        and_(
+            File.file_id == file_id,
+            File.owner_id == user_id,
+            File.is_active == True
+        )
+    ).first()
+    
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file.is_public = not file.is_public
+    db.commit()
+    db.refresh(file)
+    
+    return file
+
+# Export all functions
+__all__ = [
+    'save_file_async',
+    'save_file',
+    'get_file_path', 
+    'get_user_files',
+    'delete_file',
+    'get_user_stats',
+    'get_file_preview',
+    'get_file_info',
+    'toggle_file_privacy',
+    'mysql_file_service'
+]
