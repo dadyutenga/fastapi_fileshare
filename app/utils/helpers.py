@@ -25,10 +25,10 @@ def get_user_upload_path(user_id: int) -> str:
     return str(user_folder)
 
 def get_user_temp_directory(user_id: int) -> str:
-    """Get user-specific temp directory for chunked uploads"""
-    temp_folder = Path(settings.UPLOAD_DIR) / "temp_chunks" / str(user_id)
-    temp_folder.mkdir(parents=True, exist_ok=True)
-    return str(temp_folder)
+    """Return the temp chunk upload directory for a user."""
+    import os
+    from app.core.config import settings
+    return os.path.join(settings.UPLOAD_DIR, "temp_chunks", str(user_id))
 
 def get_file_path_for_user(user_id: int, filename: str) -> str:
     """Get full file path for user"""
