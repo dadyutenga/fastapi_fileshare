@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 from decimal import Decimal
 from enum import Enum
+from uuid import UUID
 
 # Enums matching the database models
 class PlanType(str, Enum):
@@ -33,7 +34,7 @@ class UserUpdate(BaseModel):
     phone_number: Optional[str] = None
 
 class User(UserBase):
-    id: int
+    id: str  # Changed from int to str for UUID
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime] = None
@@ -56,7 +57,7 @@ class User(UserBase):
 
 class UserProfile(UserBase):
     """Extended user profile with premium status"""
-    id: int
+    id: str  # Changed from int to str for UUID
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime] = None
@@ -75,7 +76,7 @@ class UserProfile(UserBase):
         from_attributes = True
 
 class UserStats(BaseModel):
-    user_id: int
+    user_id: str  # Changed from int to str for UUID
     total_files: int
     storage_used: int
     storage_limit: int
@@ -101,7 +102,7 @@ class UserLimitsUpdate(BaseModel):
 
 class PaymentHistoryItem(BaseModel):
     """Single payment history item"""
-    id: int
+    id: str  # Changed from int to str for UUID
     payment_id: str
     amount: Decimal
     currency: str

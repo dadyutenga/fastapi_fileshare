@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 class FileBase(BaseModel):
     filename: str
@@ -13,14 +14,14 @@ class FileCreate(FileBase):
     is_public: bool = False
 
 class FileResponse(FileBase):
-    id: int
+    id: str  # Changed from int to str for UUID
     file_id: str
     upload_time: datetime
     ttl: int
     download_count: int
     is_active: bool
     is_public: bool
-    owner_id: int
+    owner_id: str  # Changed from int to str for UUID
 
     class Config:
         from_attributes = True

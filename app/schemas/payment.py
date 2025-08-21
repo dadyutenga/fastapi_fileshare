@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from decimal import Decimal
 from enum import Enum
+from uuid import UUID
 
 class PlanType(str, Enum):
     FREE = "free"
@@ -31,9 +32,9 @@ class PaymentUpdate(BaseModel):
 
 class PaymentResponse(BaseModel):
     """Payment response"""
-    id: int
+    id: str  # Changed from int to str for UUID
     payment_id: str
-    user_id: int
+    user_id: str  # Changed from int to str for UUID
     amount: Decimal
     currency: str
     status: PaymentStatus

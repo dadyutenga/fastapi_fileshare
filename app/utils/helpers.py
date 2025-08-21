@@ -9,6 +9,18 @@ def generate_file_id():
     """Generate unique file ID using UUID4"""
     return str(uuid.uuid4())
 
+def generate_user_id():
+    """Generate unique user ID using UUID4"""
+    return str(uuid.uuid4())
+
+def is_valid_uuid(uuid_string: str) -> bool:
+    """Validate if a string is a valid UUID"""
+    try:
+        uuid.UUID(uuid_string)
+        return True
+    except (ValueError, TypeError):
+        return False
+
 def generate_secure_hash(data: str) -> str:
     """Generate SHA-256 hash instead of MD5"""
     return hashlib.sha256(data.encode()).hexdigest()
@@ -18,20 +30,20 @@ def generate_upload_id(filename: str, file_size: int) -> str:
     data = f"{filename}_{file_size}_{time.time()}"
     return hashlib.sha256(data.encode()).hexdigest()
 
-def get_user_upload_path(user_id: int) -> str:
-    """Get user-specific upload directory"""
+def get_user_upload_path(user_id: str) -> str:
+    """Get user-specific upload directory - now works with UUID strings"""
     user_folder = Path(settings.UPLOAD_DIR) / "users" / str(user_id)
     user_folder.mkdir(parents=True, exist_ok=True)
     return str(user_folder)
 
-def get_user_temp_directory(user_id: int) -> str:
-    """Return the temp chunk upload directory for a user."""
+def get_user_temp_directory(user_id: str) -> str:
+    """Return the temp chunk upload directory for a user - now works with UUID strings"""
     import os
     from app.core.config import settings
     return os.path.join(settings.UPLOAD_DIR, "temp_chunks", str(user_id))
 
-def get_file_path_for_user(user_id: int, filename: str) -> str:
-    """Get full file path for user"""
+def get_file_path_for_user(user_id: str, filename: str) -> str:
+    """Get full file path for user - now works with UUID strings"""
     user_folder = get_user_upload_path(user_id)
     return os.path.join(user_folder, filename)
 

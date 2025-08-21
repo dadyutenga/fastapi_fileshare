@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, BigInteger, Text, Enum, Decimal
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, BigInteger, Text, Enum, Numeric
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 import enum
+import uuid
 
 from .base import Base
 
@@ -20,7 +23,7 @@ class PaymentStatus(enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(CHAR(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     username = Column(String(100), unique=True, index=True, nullable=False)  # Added length
     hashed_password = Column(String(255), nullable=False)  # Added length for password hash
     
@@ -130,12 +133,12 @@ class User(Base):
 class PaymentHistory(Base):
     __tablename__ = "payment_history"
     
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    id = Column(CHAR(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False)
     
     # Payment details
     payment_id = Column(String(100), unique=True, index=True, nullable=False)  # External payment ID
-    amount = Column(Decimal(10, 2), nullable=False)  # Payment amount
+    amount = Column(Numeric(10, 2), nullable=False)  # Payment amount - using Numeric instead of Decimal
     currency = Column(String(3), default="USD")  # Currency code
     status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
     
@@ -158,8 +161,8 @@ class PaymentHistory(Base):
 class File(Base):
     __tablename__ = "files"
 
-    id = Column(Integer, primary_key=True, index=True)
-    file_id = Column(String(36), unique=True, index=True, nullable=False)  # UUID is 36 chars
+    id = Column(CHAR(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    file_id = Column(String(36), unique=True, index=True, nullable=False)  # Keep this for backward compatibility
     filename = Column(String(255), nullable=False)  # Added length for filename
     original_filename = Column(String(255), nullable=False)  # Added length
     path = Column(Text, nullable=False)  # Use TEXT for potentially long paths
@@ -171,7 +174,7 @@ class File(Base):
     download_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
     is_public = Column(Boolean, default=False)  # New field for public/private sharing
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(CHAR(36), ForeignKey("users.id"))
     
     # New field for file hash (SHA-256)
     file_hash = Column(String(64), nullable=True)  # SHA-256 is 64 hex chars
