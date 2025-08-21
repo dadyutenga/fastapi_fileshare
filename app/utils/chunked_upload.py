@@ -16,21 +16,21 @@ class ChunkedUploadManager:
         if not os.path.exists(self.base_temp_dir):
             os.makedirs(self.base_temp_dir)
     
-    def get_user_temp_dir(self, user_id: int) -> str:
+    def get_user_temp_dir(self, user_id) -> str:
         """Get user-specific temp directory"""
         return get_user_temp_directory(user_id)
     
-    def get_chunk_path(self, upload_id: str, chunk_number: int, user_id: int) -> str:
+    def get_chunk_path(self, upload_id: str, chunk_number: int, user_id) -> str:
         """Get the path for a specific chunk in user's temp directory"""
         user_temp_dir = self.get_user_temp_dir(user_id)
         return os.path.join(user_temp_dir, f"{upload_id}_chunk_{chunk_number}")
     
-    def get_upload_info_path(self, upload_id: str, user_id: int) -> str:
+    def get_upload_info_path(self, upload_id: str, user_id) -> str:
         """Get the path for upload metadata in user's temp directory"""
         user_temp_dir = self.get_user_temp_dir(user_id)
         return os.path.join(user_temp_dir, f"{upload_id}_info.json")
     
-    def save_chunk(self, upload_id: str, chunk_number: int, chunk_data: bytes, user_id: int) -> bool:
+    def save_chunk(self, upload_id: str, chunk_number: int, chunk_data: bytes, user_id) -> bool:
         """Save a chunk to disk in user's temp directory"""
         try:
             chunk_path = self.get_chunk_path(upload_id, chunk_number, user_id)
@@ -41,7 +41,7 @@ class ChunkedUploadManager:
             print(f"Error saving chunk {chunk_number} for upload {upload_id}: {e}")
             return False
     
-    def save_upload_info(self, upload_id: str, filename: str, total_chunks: int, file_size: int, user_id: int) -> bool:
+    def save_upload_info(self, upload_id: str, filename: str, total_chunks: int, file_size: int, user_id) -> bool:
         """Save upload metadata as JSON in user's temp directory"""
         try:
             info_path = self.get_upload_info_path(upload_id, user_id)
@@ -59,7 +59,7 @@ class ChunkedUploadManager:
             print(f"Error saving upload info for {upload_id}: {e}")
             return False
     
-    def get_upload_info(self, upload_id: str, user_id: int) -> Optional[tuple]:
+    def get_upload_info(self, upload_id: str, user_id) -> Optional[tuple]:
         """Get upload metadata from user's temp directory"""
         try:
             info_path = self.get_upload_info_path(upload_id, user_id)
@@ -73,7 +73,7 @@ class ChunkedUploadManager:
             print(f"Error reading upload info for {upload_id}: {e}")
             return None
     
-    def is_upload_complete(self, upload_id: str, user_id: int) -> bool:
+    def is_upload_complete(self, upload_id: str, user_id) -> bool:
         """Check if all chunks have been uploaded"""
         try:
             upload_info = self.get_upload_info(upload_id, user_id)
@@ -93,7 +93,7 @@ class ChunkedUploadManager:
             print(f"Error checking upload completion for {upload_id}: {e}")
             return False
     
-    def assemble_file(self, upload_id: str, user_id: int) -> str:
+    def assemble_file(self, upload_id: str, user_id) -> str:
         """Assemble all chunks into the final file in user's temp directory"""
         try:
             upload_info = self.get_upload_info(upload_id, user_id)
@@ -135,7 +135,7 @@ class ChunkedUploadManager:
                     pass
             raise HTTPException(status_code=500, detail=f"Assembly failed: {str(e)}")
     
-    def cleanup_upload(self, upload_id: str, user_id: int):
+    def cleanup_upload(self, upload_id: str, user_id):
         """Clean up temporary files for an upload in user's temp directory"""
         try:
             upload_info = self.get_upload_info(upload_id, user_id)

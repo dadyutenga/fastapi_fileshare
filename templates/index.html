@@ -14,10 +14,10 @@
             </div>
 
             <form id="uploadForm" action="/files/upload" method="post" enctype="multipart/form-data" class="max-w-lg mx-auto">
-                <!-- Mobile-Optimized File Drop Zone -->
+                <!-- Mobile-Optimized File Drop Zone with Multiple File Support -->
                 <div class="mb-4 sm:mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-file mr-1"></i> Select File
+                        <i class="fas fa-files mr-1"></i> Select Files (Multiple files supported)
                     </label>
                     <div class="mt-1 flex justify-center px-3 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition-colors">
                         <div class="space-y-1 text-center">
@@ -26,15 +26,38 @@
                             </svg>
                             <div class="flex text-xs sm:text-sm text-gray-600">
                                 <label for="file" class="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-blue-500">
-                                    <span>Upload a file</span>
-                                    <input id="file" name="file" type="file" class="sr-only" required>
+                                    <span>Upload files</span>
+                                    <input id="file" name="file" type="file" class="sr-only" multiple>
                                 </label>
                                 <p class="pl-1 hidden sm:inline">or drag and drop</p>
                             </div>
                             <p class="text-xs text-gray-500 px-2 sm:px-0">
-                                <span class="block sm:inline">Images, Documents, Videos,</span>
-                                <span class="block sm:inline">Audio, Archives up to 500MB</span>
+                                <span class="block sm:inline">Select multiple files at once.</span>
+                                <span class="block sm:inline">Each file up to 500MB</span>
                             </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Files Display -->
+                    <div id="selectedFiles" class="mt-3 hidden">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-list mr-1"></i> Selected Files
+                                </h4>
+                                <button type="button" onclick="clearSelectedFiles()" class="text-xs text-red-600 hover:text-red-800">
+                                    <i class="fas fa-times mr-1"></i> Clear All
+                                </button>
+                            </div>
+                            <div id="filesList" class="space-y-2 max-h-32 overflow-y-auto">
+                                <!-- Files will be listed here -->
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-gray-200">
+                                <div class="flex justify-between text-xs text-gray-600">
+                                    <span id="filesCount">0 files selected</span>
+                                    <span id="totalSize">0 MB</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -92,17 +115,30 @@
                 <button type="button" onclick="handleUpload()" id="uploadBtn" 
                         class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 text-sm sm:text-base">
                     <i class="fas fa-upload mr-2"></i>
-                    Upload File
+                    Upload Files
                 </button>
                 
-                <!-- Mobile-Optimized Progress Bar -->
+                <!-- Mobile-Optimized Progress Bar for Multiple Files -->
                 <div id="uploadProgress" class="mt-4 hidden">
-                    <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-1">
-                        <span id="progressText" class="truncate mr-2">Uploading...</span>
-                        <span id="progressPercent" class="flex-shrink-0">0%</span>
+                    <!-- Overall Progress -->
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-1">
+                            <span id="progressText" class="truncate mr-2">Uploading files...</span>
+                            <span id="progressPercent" class="flex-shrink-0">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    
+                    <!-- Individual Files Progress -->
+                    <div id="filesProgress" class="space-y-2 max-h-32 overflow-y-auto">
+                        <!-- Individual file progress will be added here -->
+                    </div>
+                    
+                    <!-- Upload Status -->
+                    <div id="uploadStatus" class="mt-2 text-xs text-gray-600">
+                        <span id="uploadedCount">0</span> of <span id="totalFiles">0</span> files uploaded
                     </div>
                 </div>
             </form>

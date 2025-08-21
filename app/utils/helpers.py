@@ -36,11 +36,14 @@ def get_user_upload_path(user_id: str) -> str:
     user_folder.mkdir(parents=True, exist_ok=True)
     return str(user_folder)
 
-def get_user_temp_directory(user_id: str) -> str:
-    """Return the temp chunk upload directory for a user - now works with UUID strings"""
+def get_user_temp_directory(user_id) -> str:
+    """Return the temp chunk upload directory for a user - works with UUID strings or integer IDs"""
     import os
     from app.core.config import settings
-    return os.path.join(settings.UPLOAD_DIR, "temp_chunks", str(user_id))
+    user_temp_dir = os.path.join(settings.UPLOAD_DIR, "temp_chunks", str(user_id))
+    if not os.path.exists(user_temp_dir):
+        os.makedirs(user_temp_dir, exist_ok=True)
+    return user_temp_dir
 
 def get_file_path_for_user(user_id: str, filename: str) -> str:
     """Get full file path for user - now works with UUID strings"""
