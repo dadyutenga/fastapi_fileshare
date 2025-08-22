@@ -8,9 +8,9 @@
             <div class="text-center mb-6 sm:mb-8">
                 <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                     <i class="fas fa-cloud-upload-alt text-primary mr-2"></i>
-                    Upload Your File
+                    Upload Your Files
                 </h1>
-                <p class="text-sm sm:text-base text-gray-600">Share files securely with optional expiry time</p>
+                <p class="text-sm sm:text-base text-gray-600">Share multiple files securely with optional expiry time</p>
             </div>
 
             <form id="uploadForm" action="/files/upload" method="post" enctype="multipart/form-data" class="max-w-lg mx-auto">
@@ -19,7 +19,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-files mr-1"></i> Select Files (Multiple files supported)
                     </label>
-                    <div class="mt-1 flex justify-center px-3 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition-colors">
+                    <div id="dropZone" class="mt-1 flex justify-center px-3 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition-colors">
                         <div class="space-y-1 text-center">
                             <svg class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -70,16 +70,17 @@
                     <select name="ttl" id="ttl" class="block w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                         <option value="0">Never expires</option>
                         <option value="1">1 hour</option>
+                        <option value="6">6 hours</option>
                         <option value="24">24 hours</option>
+                        <option value="72">3 days</option>
                         <option value="168">1 week</option>
-                        <option value="720">1 month</option>
                     </select>
                 </div>
 
-                <!-- Mobile-Optimized Sharing Settings -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        <i class="fas fa-share-alt mr-1"></i> Sharing Settings
+                <!-- Mobile-Optimized Sharing Options -->
+                <div class="mb-4 sm:mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-share-alt mr-1"></i> File Sharing
                     </label>
                     <div class="space-y-3">
                         <div class="flex items-start">
@@ -112,7 +113,7 @@
                 </div>
 
                 <!-- Mobile-Optimized Upload Button -->
-                <button type="button" onclick="handleUpload()" id="uploadBtn" 
+                <button type="button" onclick="handleMultipleUpload()" id="uploadBtn" 
                         class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 text-sm sm:text-base">
                     <i class="fas fa-upload mr-2"></i>
                     Upload Files
@@ -154,6 +155,22 @@
                         </div>
                         <div class="ml-3 sm:ml-5 w-0 flex-1">
                             <dl>
+                                <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Files Shared</dt>
+                                <dd class="text-sm sm:text-lg font-medium text-gray-900">{{ user_stats.total_files if user_stats else 0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                <div class="p-4 sm:p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-hdd text-blue-400 text-xl sm:text-2xl"></i>
+                        </div>
+                        <div class="ml-3 sm:ml-5 w-0 flex-1">
+                            <dl>
                                 <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Mega Upload</dt>
                                 <dd class="text-sm sm:text-lg font-medium text-gray-900">Up to 500MB</dd>
                             </dl>
@@ -177,27 +194,11 @@
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg sm:col-span-1">
-                <div class="p-4 sm:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-eye text-blue-400 text-xl sm:text-2xl"></i>
-                        </div>
-                        <div class="ml-3 sm:ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-xs sm:text-sm font-medium text-gray-500 truncate">Preview</dt>
-                                <dd class="text-sm sm:text-lg font-medium text-gray-900">Instant View</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     {% else %}
-        <!-- Mobile-Optimized Welcome Section for Anonymous Users -->
+        <!-- Welcome Section for Non-Authenticated Users -->
         <div class="text-center">
-            <div class="bg-white shadow-sm sm:shadow rounded-lg p-4 sm:p-8 max-w-2xl mx-auto">
+            <div class="max-w-3xl mx-auto">
                 <div class="mb-6 sm:mb-8">
                     <i class="fas fa-cloud-upload-alt text-4xl sm:text-6xl text-primary mb-3 sm:mb-4"></i>
                     <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
@@ -258,7 +259,7 @@
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
                 <i class="fas fa-cloud-upload-alt text-blue-600 text-xl"></i>
             </div>
-            <h3 class="text-base sm:text-lg font-medium text-gray-900 mt-4">Uploading File</h3>
+            <h3 class="text-base sm:text-lg font-medium text-gray-900 mt-4">Uploading Files</h3>
             <div class="mt-4">
                 <div class="w-full bg-gray-200 rounded-full h-2">
                     <div id="modalProgressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -273,8 +274,8 @@
 </div>
 
 <script>
-// File upload drag and drop functionality with mobile optimizations
-const dropZone = document.querySelector('.border-dashed');
+// File upload drag and drop functionality with mobile optimizations and multiple file support
+const dropZone = document.querySelector('#dropZone');
 const fileInput = document.querySelector('#file');
 const uploadForm = document.getElementById('uploadForm');
 const progressContainer = document.getElementById('uploadProgress');
@@ -282,6 +283,15 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const progressPercent = document.getElementById('progressPercent');
 const uploadBtn = document.getElementById('uploadBtn');
+
+// Multiple files support elements
+const selectedFilesContainer = document.getElementById('selectedFiles');
+const filesList = document.getElementById('filesList');
+const filesCount = document.getElementById('filesCount');
+const totalSize = document.getElementById('totalSize');
+const filesProgress = document.getElementById('filesProgress');
+const uploadedCount = document.getElementById('uploadedCount');
+const totalFiles = document.getElementById('totalFiles');
 
 // Mobile-optimized modal elements
 const uploadModal = document.getElementById('uploadModal');
@@ -300,7 +310,7 @@ const isMobile = window.innerWidth < 768;
 // Update sharing UI based on selection
 function updateSharingUI() {
     const isPublic = document.querySelector('input[name="is_public"]:checked').value === 'true';
-    console.log('File will be:', isPublic ? 'Public' : 'Private');
+    console.log('Files will be:', isPublic ? 'Public' : 'Private');
 }
 
 // Show upload modal for mobile
@@ -375,52 +385,128 @@ if (dropZone && fileInput) {
         fileInput.files = files;
         
         if (files.length > 0) {
-            updateFileDisplay(files[0]);
+            updateFileDisplay(files);
         }
     }
 
-    // Show selected file name with mobile optimization
+    // Show selected files with mobile optimization
     fileInput.addEventListener('change', function(e) {
         if (this.files.length > 0) {
-            updateFileDisplay(this.files[0]);
+            updateFileDisplay(this.files);
         }
     });
 
-    function updateFileDisplay(file) {
-        const fileName = file.name;
-        const fileSize = file.size;
-        
-        // Truncate filename for mobile
-        let displayName = fileName;
-        if (isMobile && fileName.length > 25) {
-            const ext = fileName.split('.').pop();
-            const name = fileName.substring(0, fileName.lastIndexOf('.'));
-            displayName = name.substring(0, 20) + '...' + ext;
+    function updateFileDisplay(files) {
+        if (files.length === 0) {
+            selectedFilesContainer.classList.add('hidden');
+            return;
         }
+
+        selectedFilesContainer.classList.remove('hidden');
+        filesList.innerHTML = '';
         
-        dropZone.querySelector('span').textContent = displayName;
+        let totalSizeBytes = 0;
+        let hasValidFiles = false;
+
+        Array.from(files).forEach((file, index) => {
+            totalSizeBytes += file.size;
+            
+            // Check file size
+            const isValidSize = file.size <= MAX_FILE_SIZE;
+            hasValidFiles = hasValidFiles || isValidSize;
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = `flex items-center justify-between p-2 bg-white rounded border ${isValidSize ? 'border-gray-200' : 'border-red-200 bg-red-50'}`;
+            
+            // Truncate filename for mobile
+            let displayName = file.name;
+            if (isMobile && file.name.length > 25) {
+                const ext = file.name.split('.').pop();
+                const name = file.name.substring(0, file.name.lastIndexOf('.'));
+                displayName = name.substring(0, 20) + '...' + ext;
+            }
+            
+            fileItem.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">${displayName}</p>
+                    <p class="text-xs text-gray-500">
+                        ${formatFileSize(file.size)}
+                        ${!isValidSize ? ' - <span class="text-red-600">Too large (max 500MB)</span>' : ''}
+                    </p>
+                </div>
+                <button type="button" onclick="removeFile(${index})" class="ml-2 text-red-600 hover:text-red-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            filesList.appendChild(fileItem);
+        });
+
+        filesCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} selected`;
+        totalSize.textContent = formatFileSize(totalSizeBytes);
         
-        // Check file size
-        if (fileSize > MAX_FILE_SIZE) {
-            showError(`File too large! Maximum size is 500MB. Your file is ${(fileSize / (1024 * 1024)).toFixed(1)}MB`);
-            fileInput.value = '';
-            dropZone.querySelector('span').textContent = 'Upload a file';
+        // Update upload button state
+        uploadBtn.disabled = !hasValidFiles;
+        if (!hasValidFiles) {
+            uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Files too large';
+            uploadBtn.className = uploadBtn.className.replace('bg-primary hover:bg-blue-700', 'bg-red-500 cursor-not-allowed');
+        } else {
+            uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Files';
+            uploadBtn.className = uploadBtn.className.replace('bg-red-500 cursor-not-allowed', 'bg-primary hover:bg-blue-700');
         }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 }
 
-// Handle upload (regular or chunked based on file size)
-async function handleUpload() {
-    const file = fileInput.files[0];
-    if (!file) {
-        showError('Please select a file first.');
+// Clear selected files
+function clearSelectedFiles() {
+    fileInput.value = '';
+    selectedFilesContainer.classList.add('hidden');
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Files';
+    uploadBtn.className = uploadBtn.className.replace('bg-red-500 cursor-not-allowed', 'bg-primary hover:bg-blue-700');
+}
+
+// Remove specific file
+function removeFile(index) {
+    const dt = new DataTransfer();
+    const files = Array.from(fileInput.files);
+    
+    files.forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    fileInput.files = dt.files;
+    updateFileDisplay(fileInput.files);
+}
+
+// Handle multiple file upload
+async function handleMultipleUpload() {
+    const files = fileInput.files;
+    if (!files || files.length === 0) {
+        showError('Please select at least one file.');
         return;
     }
 
-    // Check file size
-    if (file.size > MAX_FILE_SIZE) {
-        showError(`File too large! Maximum size is 500MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
+    // Filter out oversized files
+    const validFiles = Array.from(files).filter(file => file.size <= MAX_FILE_SIZE);
+    if (validFiles.length === 0) {
+        showError('All selected files are too large. Maximum size is 500MB per file.');
         return;
+    }
+
+    if (validFiles.length < files.length) {
+        const oversizedCount = files.length - validFiles.length;
+        showError(`${oversizedCount} file(s) skipped due to size limit. Uploading ${validFiles.length} valid files.`);
     }
 
     const ttl = document.querySelector('#ttl').value;
@@ -430,30 +516,108 @@ async function handleUpload() {
     uploadBtn.disabled = true;
     uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
     
-    // Show progress (modal for mobile, inline for desktop)
+    // Show progress
     if (isMobile) {
         showUploadModal();
     } else {
         progressContainer.classList.remove('hidden');
     }
     
-    updateProgress(0, 'Preparing upload...');
+    // Initialize progress tracking
+    filesProgress.innerHTML = '';
+    totalFiles.textContent = validFiles.length;
+    uploadedCount.textContent = '0';
+    updateProgress(0, 'Preparing uploads...');
 
     try {
-        if (file.size <= MAX_FILE_SIZE_FOR_REGULAR_UPLOAD) {
-            await regularUpload(file, ttl, isPublic);
-        } else {
-            await chunkedUpload(file, ttl, isPublic);
+        let successfulUploads = 0;
+        const results = [];
+
+        for (let i = 0; i < validFiles.length; i++) {
+            const file = validFiles[i];
+            const fileProgress = createFileProgressElement(file.name, i);
+            filesProgress.appendChild(fileProgress);
+
+            try {
+                updateProgress((i / validFiles.length) * 100, `Uploading ${file.name}...`);
+                updateFileProgress(i, 0, 'Starting...');
+
+                if (file.size <= MAX_FILE_SIZE_FOR_REGULAR_UPLOAD) {
+                    await regularUpload(file, ttl, isPublic, i);
+                } else {
+                    await chunkedUpload(file, ttl, isPublic, i);
+                }
+
+                updateFileProgress(i, 100, 'Completed');
+                successfulUploads++;
+                uploadedCount.textContent = successfulUploads;
+                results.push({ success: true, filename: file.name });
+
+            } catch (error) {
+                console.error(`Upload failed for ${file.name}:`, error);
+                updateFileProgress(i, 0, 'Failed: ' + error.message);
+                results.push({ success: false, filename: file.name, error: error.message });
+            }
         }
+
+        updateProgress(100, 'All uploads completed!');
+        
+        if (successfulUploads > 0) {
+            showSuccess(`Successfully uploaded ${successfulUploads} of ${validFiles.length} files!`);
+            setTimeout(() => {
+                window.location.href = '/files';
+            }, 2000);
+        } else {
+            showError('All uploads failed. Please try again.');
+        }
+
     } catch (error) {
-        console.error('Upload failed:', error);
+        console.error('Multiple upload error:', error);
         showError('Upload failed: ' + error.message);
+    } finally {
         resetUploadUI();
     }
 }
 
+// Create file progress element
+function createFileProgressElement(filename, index) {
+    const div = document.createElement('div');
+    div.className = 'border rounded-lg p-2 bg-white';
+    div.innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium text-gray-700 truncate">${filename}</span>
+            <span id="filePercent${index}" class="text-xs text-gray-500">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-1">
+            <div id="fileProgress${index}" class="bg-blue-500 h-1 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div id="fileStatus${index}" class="text-xs text-gray-500 mt-1">Waiting...</div>
+    `;
+    return div;
+}
+
+// Update individual file progress
+function updateFileProgress(index, percent, status) {
+    const progressBar = document.getElementById(`fileProgress${index}`);
+    const percentSpan = document.getElementById(`filePercent${index}`);
+    const statusSpan = document.getElementById(`fileStatus${index}`);
+    
+    if (progressBar) progressBar.style.width = percent + '%';
+    if (percentSpan) percentSpan.textContent = Math.round(percent) + '%';
+    if (statusSpan) statusSpan.textContent = status;
+    
+    // Update progress bar color based on status
+    if (progressBar) {
+        if (status.includes('Failed')) {
+            progressBar.className = progressBar.className.replace('bg-blue-500', 'bg-red-500');
+        } else if (status === 'Completed') {
+            progressBar.className = progressBar.className.replace('bg-blue-500', 'bg-green-500');
+        }
+    }
+}
+
 // Regular upload for smaller files
-async function regularUpload(file, ttl, isPublic) {
+async function regularUpload(file, ttl, isPublic, fileIndex = 0) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('ttl', ttl);
@@ -465,7 +629,7 @@ async function regularUpload(file, ttl, isPublic) {
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
                 const percentComplete = (e.loaded / e.total) * 100;
-                updateProgress(percentComplete, 'Uploading...');
+                updateFileProgress(fileIndex, percentComplete, 'Uploading...');
             }
         });
 
@@ -474,11 +638,6 @@ async function regularUpload(file, ttl, isPublic) {
                 try {
                     const response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        updateProgress(100, 'Upload completed!');
-                        showSuccess('File uploaded successfully!');
-                        setTimeout(() => {
-                            window.location.href = '/files';
-                        }, 2000);
                         resolve(response);
                     } else {
                         reject(new Error(response.message || 'Upload failed'));
@@ -501,12 +660,12 @@ async function regularUpload(file, ttl, isPublic) {
 }
 
 // Chunked upload for larger files
-async function chunkedUpload(file, ttl, isPublic) {
+async function chunkedUpload(file, ttl, isPublic, fileIndex = 0) {
     const fileName = file.name;
     const fileSize = file.size;
     const totalChunks = Math.ceil(fileSize / CHUNK_SIZE);
 
-    updateProgress(0, `Starting chunked upload (${totalChunks} chunks)...`);
+    updateFileProgress(fileIndex, 0, `Starting chunked upload (${totalChunks} chunks)...`);
 
     try {
         // Start chunked upload
@@ -556,7 +715,7 @@ async function chunkedUpload(file, ttl, isPublic) {
                     if (chunkResponse.ok) {
                         chunkUploaded = true;
                         const progress = ((chunkNumber + 1) / totalChunks) * 90;
-                        updateProgress(progress, `Uploading chunk ${chunkNumber + 1} of ${totalChunks}...`);
+                        updateFileProgress(fileIndex, progress, `Uploading chunk ${chunkNumber + 1} of ${totalChunks}...`);
                     } else {
                         const errorData = await chunkResponse.json();
                         throw new Error(errorData.detail || `Chunk ${chunkNumber + 1} upload failed`);
@@ -587,7 +746,7 @@ async function chunkedUpload(file, ttl, isPublic) {
         }
 
         // Complete chunked upload
-        updateProgress(95, 'Finalizing upload...');
+        updateFileProgress(fileIndex, 95, 'Finalizing upload...');
         
         const completeResponse = await fetch('/files/chunked-upload/complete', {
             method: 'POST',
@@ -606,12 +765,7 @@ async function chunkedUpload(file, ttl, isPublic) {
             throw new Error(errorData.detail || 'Failed to complete chunked upload');
         }
 
-        updateProgress(100, 'Upload completed!');
-        showSuccess('Large file uploaded successfully!');
-        
-        setTimeout(() => {
-            window.location.href = '/files';
-        }, 2000);
+        updateFileProgress(fileIndex, 100, 'Completed!');
         
     } catch (error) {
         console.error('Chunked upload error:', error);
@@ -622,7 +776,7 @@ async function chunkedUpload(file, ttl, isPublic) {
 // Reset upload UI
 function resetUploadUI() {
     uploadBtn.disabled = false;
-    uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload File';
+    uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload Files';
     progressContainer.classList.add('hidden');
     hideUploadModal();
 }
@@ -630,7 +784,7 @@ function resetUploadUI() {
 // Mobile-optimized toast notifications
 function showSuccess(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 left-3 right-3 sm:left-auto sm:right-4 sm:left-auto bg-green-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50 text-sm';
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
     toast.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
     document.body.appendChild(toast);
     
@@ -641,7 +795,7 @@ function showSuccess(message) {
 
 function showError(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 left-3 right-3 sm:left-auto sm:right-4 sm:left-auto bg-red-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50 text-sm';
+    toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
     toast.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
     document.body.appendChild(toast);
     
