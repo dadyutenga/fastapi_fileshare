@@ -7,7 +7,7 @@ import os
 from app.api.routers import auth, files, views
 from app.db.base import init_db
 from app.core.config import settings
-from app import admin
+from app.api.routers import admin_auth, AdminViews
 
 # Create FastAPI app
 app = FastAPI(
@@ -32,7 +32,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(files.router, prefix="/files", tags=["files"])
 app.include_router(views.router, tags=["views"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(admin_auth.router, prefix="/admin", tags=["admin-auth"])
+app.include_router(AdminViews.router, prefix="/admin", tags=["admin-views"])
 
 # Global exception handler
 @app.exception_handler(HTTPException)

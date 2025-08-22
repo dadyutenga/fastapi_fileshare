@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Registration - FileShare Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F87060',
+                        secondary: '#102542',
+                        'coral': '#F87060',
+                        'dark-blue': '#102542',
+                        'coral-light': '#FFB5A3',
+                        'coral-dark': '#E63946',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .coral-gradient {
+            background: linear-gradient(135deg, #F87060, #E63946);
+        }
+    </style>
+</head>
+<body class="h-full">
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary">
+                    <i class="fas fa-user-shield text-white text-xl"></i>
+                </div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    Create Super Admin
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Register the first super administrator account
+                </p>
+            </div>
+
+            <!-- Success Message -->
+            {% if success %}
+            <div class="rounded-md bg-green-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-green-800">{{ success }}</p>
+                        <div class="mt-2">
+                            <a href="/admin/login" class="text-green-800 underline hover:text-green-900">Go to Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Error Message -->
+            {% if error %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-red-800">{{ error }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not success %}
+            <form class="mt-8 space-y-6" method="POST" action="/admin/register">
+                <div class="space-y-4">
+                    <div>
+                        <label for="admin_username" class="block text-sm font-medium text-gray-700">
+                            Admin Username
+                        </label>
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input
+                                id="admin_username"
+                                name="admin_username"
+                                type="text"
+                                required
+                                value="{{ admin_username or '' }}"
+                                class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                                placeholder="Enter admin username">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="admin_email" class="block text-sm font-medium text-gray-700">
+                            Email Address
+                        </label>
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input
+                                id="admin_email"
+                                name="admin_email"
+                                type="email"
+                                required
+                                value="{{ admin_email or '' }}"
+                                class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                                placeholder="Enter email address">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="full_name" class="block text-sm font-medium text-gray-700">
+                            Full Name
+                        </label>
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-id-card text-gray-400"></i>
+                            </div>
+                            <input
+                                id="full_name"
+                                name="full_name"
+                                type="text"
+                                required
+                                value="{{ full_name or '' }}"
+                                class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                                placeholder="Enter full name">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">
+                            Password
+                        </label>
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                                placeholder="Enter password">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-gray-700">
+                            Confirm Password
+                        </label>
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input
+                                id="confirm_password"
+                                name="confirm_password"
+                                type="password"
+                                required
+                                class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                                placeholder="Confirm password">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white coral-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Create Super Admin
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <a href="/admin/login" class="text-primary hover:text-coral-dark text-sm">
+                        Already have an admin account? Sign in
+                    </a>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime
+from sqlalchemy import or_
 
 from app.core.security import create_access_token
 from app.api.deps import get_db
@@ -17,7 +18,7 @@ from app.schemas.admin import AdminLogin, AdminCreate, AdminToken, AdminProfile
 from app.services.admin_auth_service import AdminAuthService
 from app.schemas.token import Token
 
-router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
+router = APIRouter( tags=["admin-auth"])
 templates = Jinja2Templates(directory="templates")
 
 @router.post("/login", response_model=AdminToken)
@@ -195,3 +196,113 @@ async def admin_login_page(request: Request):
         "admin/login.html",
         {"request": request}
     )
+
+@router.get("/register", response_class=HTMLResponse)
+async def admin_register_page(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Admin registration page (only if no super admin exists)"""
+    # Check if any super admin exists
+    existing_super_admin = db.query(Admin).filter(Admin.is_super_admin == True).first()
+    
+    if existing_super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin already exists. Contact existing admin for access."
+        )
+    
+    return templates.TemplateResponse(
+        "admin/register.html",
+        {"request": request}
+    )
+
+@router.post("/register", response_class=HTMLResponse)
+async def admin_register(
+    request: Request,
+    admin_username: str = Form(...),
+    admin_email: str = Form(...),
+    full_name: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Register first super admin"""
+    # Check if any super admin exists
+    existing_super_admin = db.query(Admin).filter(Admin.is_super_admin == True).first()
+    
+    if existing_super_admin:
+        return templates.TemplateResponse(
+            "admin/register.html",
+            {
+                "request": request, 
+                "error": "Super admin already exists. Contact existing admin for access."
+            }
+        )
+    
+    # Validate form
+    if password != confirm_password:
+        return templates.TemplateResponse(
+            "admin/register.html",
+            {
+                "request": request, 
+                "error": "Passwords do not match",
+                "admin_username": admin_username,
+                "admin_email": admin_email,
+                "full_name": full_name
+            }
+        )
+    
+    # Check if username or email already exists
+    existing_admin = db.query(Admin).filter(
+        or_(
+            Admin.admin_username == admin_username,
+            Admin.admin_email == admin_email
+        )
+    ).first()
+    
+    if existing_admin:
+        return templates.TemplateResponse(
+            "admin/register.html",
+            {
+                "request": request, 
+                "error": "Username or email already exists",
+                "admin_username": admin_username,
+                "admin_email": admin_email,
+                "full_name": full_name
+            }
+        )
+    
+    try:
+        # Create super admin
+        admin_data = AdminCreate(
+            admin_username=admin_username,
+            admin_email=admin_email,
+            full_name=full_name,
+            password=password,
+            role=AdminRole.SUPER_ADMIN
+        )
+        
+        admin = AdminAuthService.create_admin(db, admin_data)
+        admin.is_super_admin = True
+        db.commit()
+        
+        return templates.TemplateResponse(
+            "admin/register.html",
+            {
+                "request": request, 
+                "success": "Super admin created successfully! You can now login."
+            }
+        )
+        
+    except Exception as e:
+        return templates.TemplateResponse(
+            "admin/register.html",
+            {
+                "request": request, 
+                "error": f"Error creating admin: {str(e)}",
+                "admin_username": admin_username,
+                "admin_email": admin_email,
+                "full_name": full_name
+            }
+        )

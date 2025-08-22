@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - FileShare Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F87060',
+                        secondary: '#102542',
+                        'coral': '#F87060',
+                        'dark-blue': '#102542',
+                        'coral-light': '#FFB5A3',
+                        'coral-dark': '#E63946',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .coral-gradient {
+            background: linear-gradient(135deg, #F87060, #E63946);
+        }
+        .coral-gradient:hover {
+            background: linear-gradient(135deg, #E63946, #D62828);
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50">
+    <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="text-center">
+                <i class="fas fa-shield-alt text-6xl text-primary mb-4"></i>
+                <h2 class="text-3xl font-bold text-gray-900">Admin Portal</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Sign in to your admin account
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                {% if error %}
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ error }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form class="space-y-6" action="/admin/login-web" method="POST">
+                    <div>
+                        <label for="admin_username" class="block text-sm font-medium text-gray-700">
+                            Admin Username
+                        </label>
+                        <div class="mt-1 relative">
+                            <input id="admin_username" name="admin_username" type="text" required
+                                   class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                   placeholder="Enter your admin username">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">
+                            Password
+                        </label>
+                        <div class="mt-1 relative">
+                            <input id="password" name="password" type="password" required
+                                   class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                   placeholder="Enter your password">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white coral-gradient hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Sign In to Admin Portal
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300" />
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Security Notice</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Admin access is restricted and monitored
+                        </p>
+                        <a href="/" class="mt-2 inline-block text-sm text-primary hover:text-coral-dark">
+                            <i class="fas fa-arrow-left mr-1"></i>
+                            Back to User Portal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

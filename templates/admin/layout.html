@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel - FileShare Portal{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F87060',
+                        secondary: '#102542',
+                        'coral': '#F87060',
+                        'dark-blue': '#102542',
+                        'coral-light': '#FFB5A3',
+                        'coral-dark': '#E63946',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .coral-gradient {
+            background: linear-gradient(135deg, #F87060, #E63946);
+        }
+        .coral-gradient:hover {
+            background: linear-gradient(135deg, #E63946, #D62828);
+        }
+        .admin-sidebar {
+            background: linear-gradient(180deg, #102542, #1e3a5f);
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-100">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <div class="admin-sidebar w-64 flex-shrink-0">
+            <div class="flex flex-col h-full">
+                <!-- Admin Logo -->
+                <div class="flex items-center h-16 px-6 border-b border-gray-600">
+                    <i class="fas fa-shield-alt text-primary text-2xl mr-3"></i>
+                    <h1 class="text-white text-xl font-bold">Admin Panel</h1>
+                </div>
+                
+                <!-- Admin Info -->
+                <div class="px-6 py-4 border-b border-gray-600">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-shield text-white"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-white text-sm font-medium">{{ admin.admin_username }}</p>
+                            <p class="text-gray-300 text-xs">{{ admin.role.value.title().replace('_', ' ') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 px-6 py-4 space-y-2">
+                    <a href="/admin/dashboard" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-tachometer-alt mr-3"></i>
+                        Dashboard
+                    </a>
+                    
+                    {% if admin.has_permission(admin_permission.VIEW_USERS) %}
+                    <a href="/admin/users" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-users mr-3"></i>
+                        Manage Users
+                    </a>
+                    {% endif %}
+                    
+                    {% if admin.has_permission(admin_permission.VIEW_ALL_FILES) %}
+                    <a href="/admin/files" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-folder mr-3"></i>
+                        Manage Files
+                    </a>
+                    {% endif %}
+                    
+                    {% if admin.has_permission(admin_permission.VIEW_LOGS) %}
+                    <a href="/admin/logs" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-clipboard-list mr-3"></i>
+                        Activity Logs
+                    </a>
+                    {% endif %}
+                    
+                    {% if admin.is_super_admin %}
+                    <a href="/admin/admins" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-user-shield mr-3"></i>
+                        Admin Management
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <!-- Logout -->
+                <div class="px-6 py-4 border-t border-gray-600">
+                    <a href="/admin/logout" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-red-300 hover:text-red-200 hover:bg-red-900 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-3"></i>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{% block page_title %}Admin Dashboard{% endblock %}</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-500">
+                            Last activity: {{ admin.last_activity.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        <a href="/" class="text-primary hover:text-coral-dark text-sm">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            User Portal
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                {% if success %}
+                <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-green-700">{{ success }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if error %}
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ error }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh dashboard stats every 30 seconds
+        if (window.location.pathname === '/admin/dashboard') {
+            setInterval(() => {
+                fetch('/admin/dashboard/stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update dashboard numbers if elements exist
+                        const updateElement = (id, value) => {
+                            const elem = document.getElementById(id);
+                            if (elem) elem.textContent = value;
+                        };
+                        
+                        updateElement('total-users', data.total_users);
+                        updateElement('active-users', data.active_users);
+                        updateElement('total-files', data.total_files);
+                        updateElement('files-today', data.files_uploaded_today);
+                    })
+                    .catch(console.error);
+            }, 30000);
+        }
+
+        // Confirm dangerous actions
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('[data-confirm]')) {
+                if (!confirm(e.target.getAttribute('data-confirm'))) {
+                    e.preventDefault();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,152 +1,248 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 
 {% block title %}Admin Dashboard - FileShare Portal{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="px-4 py-6 sm:px-0">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p class="text-gray-600">Manage users, files, and system statistics</p>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="space-y-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Users -->
         <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
+            <div class="p-5">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users text-blue-400 text-2xl"></i>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-900">Total Users</h3>
-                        <p class="text-2xl font-semibold text-gray-900">{{ total_users }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="total-users">{{ stats.total_users }}</dd>
+                        </dl>
                     </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-green-600 font-medium">{{ stats.active_users }}</span>
+                    <span class="text-gray-500">active</span>
                 </div>
             </div>
         </div>
 
+        <!-- Premium Users -->
         <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
+            <div class="p-5">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                        <i class="fas fa-file-alt text-green-600 text-xl"></i>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-crown text-yellow-400 text-2xl"></i>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-900">Total Files</h3>
-                        <p class="text-2xl font-semibold text-gray-900">{{ total_files }}</p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Premium Users</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ stats.premium_users }}</dd>
+                        </dl>
                     </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-gray-500">
+                        {{ "%.1f"|format((stats.premium_users / stats.total_users * 100) if stats.total_users > 0 else 0) }}% conversion
+                    </span>
                 </div>
             </div>
         </div>
 
+        <!-- Total Files -->
         <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
+            <div class="p-5">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
-                        <i class="fas fa-database text-purple-600 text-xl"></i>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file text-green-400 text-2xl"></i>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-900">Storage Used</h3>
-                        <p class="text-2xl font-semibold text-gray-900">
-                            {% set size_mb = total_file_size / (1024 * 1024) %}
-                            {{ "%.2f"|format(size_mb) }} MB
-                        </p>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Files</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="total-files">{{ stats.total_files }}</dd>
+                        </dl>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Users -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Users</h3>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-blue-600 font-medium" id="files-today">{{ stats.files_uploaded_today }}</span>
+                    <span class="text-gray-500">today</span>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for user in recent_users %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <i class="fas fa-user text-gray-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if user.is_active %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+        </div>
+
+        <!-- Storage Used -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-hdd text-purple-400 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Storage Used</dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                {% if stats.total_storage_used > 1024*1024*1024 %}
+                                    {{ "%.1f"|format(stats.total_storage_used / (1024*1024*1024)) }} GB
+                                {% elif stats.total_storage_used > 1024*1024 %}
+                                    {{ "%.1f"|format(stats.total_storage_used / (1024*1024)) }} MB
                                 {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                                    {{ "%.1f"|format(stats.total_storage_used / 1024) }} KB
                                 {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="text-gray-500">{{ stats.total_downloads }} downloads</span>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Recent Files -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Files</h3>
+    <!-- Recent Activity and File Types -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Activity -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-clock text-gray-400 mr-2"></i>
+                    Recent Admin Activity
+                </h3>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for file in recent_files %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ file.original_filename[:30] }}{% if file.original_filename|length > 30 %}...{% endif %}</div>
-                                <div class="text-sm text-gray-500">
-                                    {% if file.is_public %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Public
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            Private
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {% set size_mb = file.file_size / (1024 * 1024) %}
-                                {{ "%.2f"|format(size_mb) }} MB
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="px-6 py-4">
+                {% if stats.recent_activity %}
+                <div class="space-y-3">
+                    {% for activity in stats.recent_activity[:10] %}
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            {% if activity.action == 'LOGIN' %}
+                                <i class="fas fa-sign-in-alt text-green-500"></i>
+                            {% elif activity.action.startswith('DELETE') %}
+                                <i class="fas fa-trash text-red-500"></i>
+                            {% elif activity.action.startswith('SUSPEND') %}
+                                <i class="fas fa-user-slash text-orange-500"></i>
+                            {% else %}
+                                <i class="fas fa-cog text-blue-500"></i>
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm text-gray-900">
+                                <span class="font-medium">{{ activity.admin_username }}</span>
+                                {{ activity.action.lower().replace('_', ' ') }}
+                                {% if activity.target_type %}
+                                    {{ activity.target_type.lower() }}
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                {{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-sm">No recent activity</p>
+                {% endif %}
+            </div>
+            {% if admin.has_permission(admin_permission.VIEW_LOGS) %}
+            <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <a href="/admin/logs" class="text-sm text-primary hover:text-coral-dark">
+                    View all logs <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Top File Types -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-chart-pie text-gray-400 mr-2"></i>
+                    Popular File Types
+                </h3>
+            </div>
+            <div class="px-6 py-4">
+                {% if stats.top_file_types %}
+                <div class="space-y-3">
+                    {% for file_type in stats.top_file_types[:8] %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            {% if file_type.content_type.startswith('image/') %}
+                                <i class="fas fa-image text-blue-500 mr-2"></i>
+                            {% elif file_type.content_type == 'application/pdf' %}
+                                <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                            {% elif file_type.content_type.startswith('video/') %}
+                                <i class="fas fa-video text-purple-500 mr-2"></i>
+                            {% elif file_type.content_type.startswith('audio/') %}
+                                <i class="fas fa-music text-green-500 mr-2"></i>
+                            {% else %}
+                                <i class="fas fa-file text-gray-500 mr-2"></i>
+                            {% endif %}
+                            <span class="text-sm text-gray-900">
+                                {{ file_type.content_type.split('/')[1] if '/' in file_type.content_type else file_type.content_type }}
+                            </span>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">{{ file_type.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-sm">No files uploaded yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-bolt text-gray-400 mr-2"></i>
+                Quick Actions
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {% if admin.has_permission(admin_permission.VIEW_USERS) %}
+                <a href="/admin/users" 
+                   class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-users mr-2"></i>
+                    View Users
+                </a>
+                {% endif %}
+                
+                {% if admin.has_permission(admin_permission.VIEW_ALL_FILES) %}
+                <a href="/admin/files" 
+                   class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors">
+                    <i class="fas fa-folder mr-2"></i>
+                    View Files
+                </a>
+                {% endif %}
+                
+                {% if admin.has_permission(admin_permission.VIEW_LOGS) %}
+                <a href="/admin/logs" 
+                   class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-clipboard-list mr-2"></i>
+                    Activity Logs
+                </a>
+                {% endif %}
+                
+                {% if admin.is_super_admin %}
+                <a href="/admin/admins" 
+                   class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">
+                    <i class="fas fa-user-shield mr-2"></i>
+                    Manage Admins
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
