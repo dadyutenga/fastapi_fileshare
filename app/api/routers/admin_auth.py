@@ -1,45 +1,50 @@
 """
-Admin Authentication Router
-Separate from regular user authentication
+Admin Authentication Routes
+Completely separate from regular user authentication
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Form, Request
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
-from datetime import datetime
 from sqlalchemy import or_
+from typing import Optional
+from datetime import datetime, timedelta
+import jwt
 
-from app.core.security import create_access_token
 from app.api.deps import get_db
-from app.api.admin_deps import get_current_admin, get_client_ip, get_user_agent, require_super_admin
-from app.db.admin_models import Admin
-from app.schemas.admin import AdminLogin, AdminCreate, AdminToken, AdminProfile
+from app.db.admin_models import Admin, AdminRole
+from app.schemas.admin import AdminCreate, AdminLogin, AdminToken, AdminProfile
 from app.services.admin_auth_service import AdminAuthService
-from app.schemas.token import Token
+from app.core.security import create_access_token
+from app.core.config import settings
 
-router = APIRouter( tags=["admin-auth"])
+# Remove the prefix here since it's added in main.py
+router = APIRouter(tags=["admin-auth"])
 templates = Jinja2Templates(directory="templates")
+
+@router.get("/login", response_class=HTMLResponse)
+async def admin_login_page(request: Request):
+    """Admin login page"""
+    return templates.TemplateResponse(
+        "admin/login.html",
+        {"request": request}
+    )
 
 @router.post("/login", response_model=AdminToken)
 async def admin_login_api(
-    request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    admin_data: AdminLogin,
     db: Session = Depends(get_db)
 ):
-    """Admin login via API"""
-    ip_address = get_client_ip(request)
-    user_agent = get_user_agent(request)
-    
+    """Admin API login"""
     admin = AdminAuthService.authenticate_admin(
-        db, form_data.username, form_data.password, ip_address
+        db, admin_data.admin_username, admin_data.password
     )
     
     if not admin:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect admin credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid credentials"
         )
     
     # Create access token with admin type
@@ -48,8 +53,7 @@ async def admin_login_api(
     )
     
     # Get admin permissions
-    from app.db.admin_models import AdminPermission
-    permissions = [perm for perm in AdminPermission if admin.has_permission(perm)]
+    permissions = [perm.value for perm in admin.role.value if admin.has_permission(perm)]
     
     admin_profile = AdminProfile(
         id=admin.id,
@@ -78,21 +82,18 @@ async def admin_login_web(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """Admin login via web form"""
+    """Admin web login"""
     try:
-        ip_address = get_client_ip(request)
-        
         admin = AdminAuthService.authenticate_admin(
-            db, admin_username, password, ip_address
+            db, admin_username, password
         )
         
         if not admin:
             return templates.TemplateResponse(
                 "admin/login.html",
                 {
-                    "request": request,
-                    "error": "Invalid admin credentials",
-                    "admin_username": admin_username
+                    "request": request, 
+                    "error": "Invalid username or password"
                 }
             )
         
@@ -104,98 +105,22 @@ async def admin_login_web(
         # Redirect to admin dashboard
         response = RedirectResponse(url="/admin/dashboard", status_code=302)
         response.set_cookie(
-            key="admin_access_token",
-            value=f"Bearer {access_token}",
+            key="admin_token", 
+            value=access_token,
             httponly=True,
-            max_age=3600,  # 1 hour for admin sessions
-            samesite="lax",
-            secure=False  # Set to True in production with HTTPS
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax"
         )
-        
         return response
         
-    except HTTPException as e:
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {
-                "request": request,
-                "error": e.detail,
-                "admin_username": admin_username
-            }
-        )
     except Exception as e:
         return templates.TemplateResponse(
             "admin/login.html",
             {
-                "request": request,
-                "error": f"Login failed: {str(e)}",
-                "admin_username": admin_username
+                "request": request, 
+                "error": f"Login failed: {str(e)}"
             }
         )
-
-@router.post("/create-admin", response_model=AdminProfile)
-async def create_admin(
-    admin_data: AdminCreate,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(require_super_admin)
-):
-    """Create new admin (super admin only)"""
-    new_admin = AdminAuthService.create_admin(db, admin_data, current_admin.id)
-    
-    # Get permissions for response
-    from app.db.admin_models import AdminPermission
-    permissions = [perm for perm in AdminPermission if new_admin.has_permission(perm)]
-    
-    return AdminProfile(
-        id=new_admin.id,
-        admin_username=new_admin.admin_username,
-        admin_email=new_admin.admin_email,
-        full_name=new_admin.full_name,
-        role=new_admin.role,
-        is_active=new_admin.is_active,
-        is_super_admin=new_admin.is_super_admin,
-        permissions=permissions,
-        created_at=new_admin.created_at,
-        last_login=new_admin.last_login,
-        last_activity=new_admin.last_activity
-    )
-
-@router.get("/profile", response_model=AdminProfile)
-async def get_admin_profile(
-    current_admin: Admin = Depends(get_current_admin)
-):
-    """Get current admin profile"""
-    from app.db.admin_models import AdminPermission
-    permissions = [perm for perm in AdminPermission if current_admin.has_permission(perm)]
-    
-    return AdminProfile(
-        id=current_admin.id,
-        admin_username=current_admin.admin_username,
-        admin_email=current_admin.admin_email,
-        full_name=current_admin.full_name,
-        role=current_admin.role,
-        is_active=current_admin.is_active,
-        is_super_admin=current_admin.is_super_admin,
-        permissions=permissions,
-        created_at=current_admin.created_at,
-        last_login=current_admin.last_login,
-        last_activity=current_admin.last_activity
-    )
-
-@router.post("/logout")
-async def admin_logout():
-    """Admin logout"""
-    response = JSONResponse(content={"message": "Successfully logged out"})
-    response.delete_cookie(key="admin_access_token")
-    return response
-
-@router.get("/login", response_class=HTMLResponse)
-async def admin_login_page(request: Request):
-    """Admin login page"""
-    return templates.TemplateResponse(
-        "admin/login.html",
-        {"request": request}
-    )
 
 @router.get("/register", response_class=HTMLResponse)
 async def admin_register_page(
@@ -207,9 +132,12 @@ async def admin_register_page(
     existing_super_admin = db.query(Admin).filter(Admin.is_super_admin == True).first()
     
     if existing_super_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Super admin already exists. Contact existing admin for access."
+        return templates.TemplateResponse(
+            "admin/login.html",
+            {
+                "request": request, 
+                "error": "Super admin already exists. Contact existing admin for access."
+            }
         )
     
     return templates.TemplateResponse(
@@ -217,7 +145,7 @@ async def admin_register_page(
         {"request": request}
     )
 
-@router.post("/register", response_class=HTMLResponse)
+@router.post("/register", response_class=HTMLResponse) 
 async def admin_register(
     request: Request,
     admin_username: str = Form(...),
@@ -236,7 +164,7 @@ async def admin_register(
             "admin/register.html",
             {
                 "request": request, 
-                "error": "Super admin already exists. Contact existing admin for access."
+                "error": "Super admin already exists."
             }
         )
     
@@ -247,26 +175,6 @@ async def admin_register(
             {
                 "request": request, 
                 "error": "Passwords do not match",
-                "admin_username": admin_username,
-                "admin_email": admin_email,
-                "full_name": full_name
-            }
-        )
-    
-    # Check if username or email already exists
-    existing_admin = db.query(Admin).filter(
-        or_(
-            Admin.admin_username == admin_username,
-            Admin.admin_email == admin_email
-        )
-    ).first()
-    
-    if existing_admin:
-        return templates.TemplateResponse(
-            "admin/register.html",
-            {
-                "request": request, 
-                "error": "Username or email already exists",
                 "admin_username": admin_username,
                 "admin_email": admin_email,
                 "full_name": full_name
@@ -306,3 +214,10 @@ async def admin_register(
                 "full_name": full_name
             }
         )
+
+@router.post("/logout")
+async def admin_logout():
+    """Admin logout"""
+    response = RedirectResponse(url="/admin/login", status_code=302)
+    response.delete_cookie("admin_token")
+    return response

@@ -116,8 +116,8 @@ def create_initial_super_admin():
         
         logger.info("✅ Default super admin created successfully!")
         logger.info("📋 Default credentials:")
-        logger.info(f"   Username: {admin.admin_username}")
-        logger.info(f"   Email: {admin.admin_email}")
+        logger.info(f"   Username: dady89")
+        logger.info(f"   Email: dadynasser@fileshare.local")
         logger.info(f"   Password: admin123")
         logger.info("⚠️  IMPORTANT: Change the default password after first login!")
         
