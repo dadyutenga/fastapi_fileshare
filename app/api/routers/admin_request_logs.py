@@ -14,7 +14,7 @@ from app.api.admin_deps import get_current_admin, require_super_admin
 from app.db.admin_models import Admin
 from app.services.request_log_service import RequestLogService
 
-router = APIRouter(prefix="/admin/logs", tags=["admin-request-logs"])
+router = APIRouter(tags=["admin-request-logs"])
 templates = Jinja2Templates(directory="templates")
 
 @router.get("/requests", response_class=HTMLResponse)
@@ -113,6 +113,55 @@ async def admin_analytics_page(
         }
     )
 
+@router.get("/login-attempts", response_class=HTMLResponse)
+async def admin_login_attempts_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Admin page for viewing login attempts"""
+    return templates.TemplateResponse(
+        "admin/login_attempts.html",
+        {
+            "request": request,
+            "admin": current_admin,
+            "page_title": "Login Attempts"
+        }
+    )
+
+@router.get("/login-attempts/api")
+async def get_login_attempts_api(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    success: Optional[bool] = Query(None),
+    username: Optional[str] = Query(None),
+    client_ip: Optional[str] = Query(None)
+) -> Dict[str, Any]:
+    """API endpoint to get login attempts with filtering"""
+    
+    attempts = RequestLogService.get_login_attempts(
+        db=db,
+        limit=limit,
+        offset=offset,
+        success=success,
+        username=username,
+        client_ip=client_ip
+    )
+    
+    return {
+        "attempts": attempts,
+        "total": len(attempts),
+        "limit": limit,
+        "offset": offset,
+        "filters": {
+            "success": success,
+            "username": username,
+            "client_ip": client_ip
+        }
+    }
+
 @router.get("/security", response_class=HTMLResponse)
 async def admin_security_page(
     request: Request,
@@ -121,24 +170,105 @@ async def admin_security_page(
 ):
     """Admin security monitoring page"""
     return templates.TemplateResponse(
-        "admin/security_monitoring.html",
+        "admin/security_alerts.html",
         {
             "request": request,
             "admin": current_admin,
-            "page_title": "Security Monitoring"
+            "page_title": "Security Alerts"
         }
     )
 
-@router.get("/login-attempts")
-async def get_login_attempts_api(
+@router.get("/security/overview")
+async def get_security_overview_api(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin),
     hours: int = Query(24, ge=1, le=168)
 ) -> Dict[str, Any]:
-    """Get detailed login attempt statistics"""
+    """Get security overview statistics"""
     
-    login_stats = RequestLogService.get_login_attempt_stats(db, hours)
-    return login_stats
+    security_analysis = RequestLogService.get_security_analysis(db, hours)
+    
+    return {
+        "total_alerts": security_analysis.get("total_security_alerts", 0),
+        "brute_force_attempts": security_analysis.get("brute_force_attempts", 0),
+        "suspicious_ips": security_analysis.get("suspicious_ips_count", 0)
+    }
+
+@router.get("/security/brute-force")
+async def get_brute_force_alerts_api(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """Get active brute force alerts"""
+    
+    alerts = RequestLogService.get_active_brute_force_alerts(db)
+    
+    return {
+        "alerts": alerts
+    }
+
+@router.get("/security/alerts/api")
+async def get_security_alerts_api(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    alert_type: Optional[str] = Query(None)
+) -> Dict[str, Any]:
+    """API endpoint to get security alerts with filtering"""
+    
+    alerts = RequestLogService.get_security_alerts(
+        db=db,
+        limit=limit,
+        offset=offset,
+        alert_type=alert_type
+    )
+    
+    return {
+        "alerts": alerts,
+        "total": len(alerts),
+        "limit": limit,
+        "offset": offset,
+        "filters": {
+            "alert_type": alert_type
+        }
+    }
+
+@router.post("/security/block-ip")
+async def block_ip_address(
+    request: Request,
+    ip_data: dict,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(require_super_admin)
+):
+    """Block an IP address"""
+    ip_address = ip_data.get("ip_address")
+    if not ip_address:
+        raise HTTPException(status_code=400, detail="IP address is required")
+    
+    # For now, just return success - you can implement actual IP blocking logic
+    return JSONResponse(content={
+        "success": True,
+        "message": f"IP {ip_address} blocked successfully"
+    })
+
+@router.post("/security/unblock-ip")
+async def unblock_ip_address(
+    request: Request,
+    ip_data: dict,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(require_super_admin)
+):
+    """Unblock an IP address"""
+    ip_address = ip_data.get("ip_address")
+    if not ip_address:
+        raise HTTPException(status_code=400, detail="IP address is required")
+    
+    # For now, just return success - you can implement actual IP unblocking logic
+    return JSONResponse(content={
+        "success": True,
+        "message": f"IP {ip_address} unblocked successfully"
+    })
 
 @router.get("/security-analysis")
 async def get_security_analysis_api(

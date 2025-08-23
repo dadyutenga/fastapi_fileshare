@@ -332,6 +332,111 @@ class RequestLogService:
         
         total_deleted = deleted_requests + deleted_logins + deleted_alerts
         return total_deleted
+    
+    @staticmethod
+    def get_login_attempts(
+        db: Session, 
+        limit: int = 50, 
+        offset: int = 0,
+        success: Optional[bool] = None,
+        username: Optional[str] = None,
+        client_ip: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get login attempts with filtering"""
+        query = db.query(LoginAttemptLog)
+        
+        # Apply filters
+        if success is not None:
+            query = query.filter(LoginAttemptLog.success == success)
+        if username:
+            query = query.filter(LoginAttemptLog.username.ilike(f"%{username}%"))
+        if client_ip:
+            query = query.filter(LoginAttemptLog.client_ip == client_ip)
+        
+        # Order by timestamp descending and limit
+        attempts = query.order_by(desc(LoginAttemptLog.timestamp)).offset(offset).limit(limit).all()
+        
+        return [
+            {
+                "id": attempt.id,
+                "timestamp": attempt.timestamp.isoformat(),
+                "username": attempt.username,
+                "client_ip": attempt.client_ip,
+                "success": attempt.success,
+                "user_agent": attempt.user_agent,
+                "failure_reason": attempt.failure_reason
+            }
+            for attempt in attempts
+        ]
+    
+    @staticmethod
+    def get_active_brute_force_alerts(db: Session) -> List[Dict[str, Any]]:
+        """Get active brute force alerts"""
+        # Get recent unresolved brute force alerts (last 24 hours)
+        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        
+        alerts = db.query(SecurityAlert).filter(
+            and_(
+                SecurityAlert.alert_type == "BRUTE_FORCE",
+                SecurityAlert.detected_at >= cutoff_time,
+                SecurityAlert.is_resolved == False
+            )
+        ).order_by(desc(SecurityAlert.detected_at)).all()
+        
+        return [
+            {
+                "id": alert.id,
+                "detected_at": alert.detected_at.isoformat(),
+                "client_ip": alert.client_ip,
+                "target_username": alert.target_username,
+                "details": alert.details,
+                "severity": alert.severity,
+                "attempt_count": RequestLogService._extract_attempt_count_from_details(alert.details)
+            }
+            for alert in alerts
+        ]
+    
+    @staticmethod
+    def get_security_alerts(
+        db: Session,
+        limit: int = 50,
+        offset: int = 0,
+        alert_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get security alerts with filtering"""
+        query = db.query(SecurityAlert)
+        
+        if alert_type:
+            query = query.filter(SecurityAlert.alert_type == alert_type)
+        
+        alerts = query.order_by(desc(SecurityAlert.detected_at)).offset(offset).limit(limit).all()
+        
+        return [
+            {
+                "id": alert.id,
+                "detected_at": alert.detected_at.isoformat(),
+                "alert_type": alert.alert_type,
+                "client_ip": alert.client_ip,
+                "target_username": alert.target_username,
+                "details": alert.details,
+                "severity": alert.severity,
+                "resolved": alert.is_resolved
+            }
+            for alert in alerts
+        ]
+    
+    @staticmethod
+    def _extract_attempt_count_from_details(details: str) -> int:
+        """Extract attempt count from alert details"""
+        try:
+            # Look for pattern like "5 failed attempts"
+            import re
+            match = re.search(r'(\d+)\s+(?:failed\s+)?attempts?', details, re.IGNORECASE)
+            if match:
+                return int(match.group(1))
+        except:
+            pass
+        return 0
 
 # Export service instance
 request_log_service = RequestLogService()
