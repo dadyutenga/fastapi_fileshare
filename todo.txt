@@ -1,0 +1,10 @@
+Add a new model for request logs  all  that pass   thrpught  the  codes   or  files   provided  .
+as  well  for  the standard   login   endpoint  used  .
+Step 2: Add Middleware to Log Requests
+In your main app file (e.g., main.py or wherever app = FastAPI() is defined), add a middleware to capture requests. This intercepts all requests before they hit your routes (in views.py, auth.py, files.py, etc.).
+
+Step 3: Add Admin Endpoints for Viewing Logs and Stats
+
+Security: Ensure only admins can access /admin/* routes.
+Performance: For high traffic, use async DB ops or offload logging to a queue.
+Extensions for IDS:

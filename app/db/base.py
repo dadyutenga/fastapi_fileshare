@@ -19,6 +19,7 @@ Base = declarative_base()
 def init_db():
     """Initialize database - create all tables"""
     from app.db import models
+    from app.db import request_log_models  # Import request log models
     Base.metadata.create_all(bind=engine)
 
 def get_db():

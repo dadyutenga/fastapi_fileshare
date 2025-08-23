@@ -1,0 +1,282 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Login Attempts - Admin Panel{% endblock %}
+{% block page_title %}Login Attempts{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Statistics Summary -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Login Statistics (Last 24 Hours)</h3>
+        <div id="loginStatsContainer" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalLoginAttempts">-</div>
+                <div class="text-sm text-gray-500">Total Attempts</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600" id="successfulLogins">-</div>
+                <div class="text-sm text-gray-500">Successful</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-red-600" id="failedLogins">-</div>
+                <div class="text-sm text-gray-500">Failed</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-600" id="suspiciousAttempts">-</div>
+                <div class="text-sm text-gray-500">Suspicious</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Filters</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Success Status</label>
+                <select id="successFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">All Attempts</option>
+                    <option value="true">Successful Only</option>
+                    <option value="false">Failed Only</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="usernameFilter" placeholder="Enter username" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Client IP</label>
+                <input type="text" id="ipFilter" placeholder="e.g., 192.168.1.1" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+        </div>
+        <div class="mt-4">
+            <button onclick="loadLoginAttempts()" 
+                    class="bg-primary text-white px-4 py-2 rounded-md hover:bg-coral-dark">
+                Apply Filters
+            </button>
+            <button onclick="clearFilters()" 
+                    class="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Brute Force Alerts -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Brute Force Attempts</h3>
+        <div id="bruteForceContainer">
+            <div class="text-gray-500">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Login Attempts Table -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Login Attempts</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client IP</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User Agent</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Failure Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="loginAttemptsTableBody" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-sm text-gray-700">
+                        Showing <span id="currentRange">1-50</span> of <span id="totalCount">0</span> results
+                    </span>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="previousPage()" id="prevBtn" 
+                            class="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400 disabled:opacity-50">
+                        Previous
+                    </button>
+                    <button onclick="nextPage()" id="nextBtn" 
+                            class="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400 disabled:opacity-50">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 0;
+let pageSize = 50;
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    loadLoginStats();
+    loadBruteForceAlerts();
+    loadLoginAttempts();
+});
+
+function loadLoginStats() {
+    fetch('/admin/logs/stats')
+        .then(response => response.json())
+        .then(data => {
+            const loginStats = data.login_stats;
+            document.getElementById('totalLoginAttempts').textContent = loginStats.total_attempts;
+            document.getElementById('successfulLogins').textContent = loginStats.successful_attempts;
+            document.getElementById('failedLogins').textContent = loginStats.failed_attempts;
+            document.getElementById('suspiciousAttempts').textContent = loginStats.suspicious_attempts;
+        })
+        .catch(error => {
+            console.error('Error loading login stats:', error);
+        });
+}
+
+function loadBruteForceAlerts() {
+    fetch('/admin/logs/security/brute-force')
+        .then(response => response.json())
+        .then(data => {
+            renderBruteForceAlerts(data.alerts);
+        })
+        .catch(error => {
+            console.error('Error loading brute force alerts:', error);
+            document.getElementById('bruteForceContainer').innerHTML = 
+                '<div class="text-red-500">Error loading brute force alerts</div>';
+        });
+}
+
+function renderBruteForceAlerts(alerts) {
+    const container = document.getElementById('bruteForceContainer');
+    
+    if (alerts.length === 0) {
+        container.innerHTML = '<div class="text-green-600">No recent brute force attempts detected</div>';
+        return;
+    }
+    
+    container.innerHTML = alerts.map(alert => {
+        const time = new Date(alert.detected_at).toLocaleString();
+        return `
+            <div class="border-l-4 border-red-400 bg-red-50 p-4 mb-2">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Brute Force Attack Detected</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <p><strong>IP:</strong> ${alert.client_ip}</p>
+                            <p><strong>Target:</strong> ${alert.target_username || 'Multiple users'}</p>
+                            <p><strong>Attempts:</strong> ${alert.attempt_count}</p>
+                            <p><strong>Detected:</strong> ${time}</p>
+                            <p><strong>Details:</strong> ${alert.details}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function loadLoginAttempts() {
+    const params = new URLSearchParams({
+        limit: pageSize,
+        offset: currentPage * pageSize
+    });
+    
+    // Add filters
+    const successFilter = document.getElementById('successFilter').value;
+    const usernameFilter = document.getElementById('usernameFilter').value;
+    const ipFilter = document.getElementById('ipFilter').value;
+    
+    if (successFilter !== '') params.append('success', successFilter);
+    if (usernameFilter) params.append('username', usernameFilter);
+    if (ipFilter) params.append('client_ip', ipFilter);
+    
+    fetch(`/admin/logs/login-attempts/api?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            renderLoginAttemptsTable(data.attempts);
+            updatePagination(data.total);
+        })
+        .catch(error => {
+            console.error('Error loading login attempts:', error);
+            document.getElementById('loginAttemptsTableBody').innerHTML = 
+                '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading login attempts</td></tr>';
+        });
+}
+
+function renderLoginAttemptsTable(attempts) {
+    const tbody = document.getElementById('loginAttemptsTableBody');
+    
+    if (attempts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No login attempts found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = attempts.map(attempt => {
+        const time = new Date(attempt.timestamp).toLocaleString();
+        const statusClass = attempt.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+        const statusText = attempt.success ? 'Success' : 'Failed';
+        
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${time}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${attempt.username}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${attempt.client_ip}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${statusText}</span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title="${attempt.user_agent || 'Unknown'}">${attempt.user_agent || 'Unknown'}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">${attempt.failure_reason || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePagination(total) {
+    const start = currentPage * pageSize + 1;
+    const end = Math.min((currentPage + 1) * pageSize, total);
+    
+    document.getElementById('currentRange').textContent = `${start}-${end}`;
+    document.getElementById('totalCount').textContent = total;
+    
+    document.getElementById('prevBtn').disabled = currentPage === 0;
+    document.getElementById('nextBtn').disabled = end >= total;
+}
+
+function previousPage() {
+    if (currentPage > 0) {
+        currentPage--;
+        loadLoginAttempts();
+    }
+}
+
+function nextPage() {
+    currentPage++;
+    loadLoginAttempts();
+}
+
+function clearFilters() {
+    document.getElementById('successFilter').value = '';
+    document.getElementById('usernameFilter').value = '';
+    document.getElementById('ipFilter').value = '';
+    currentPage = 0;
+    loadLoginAttempts();
+}
+</script>
+{% endblock %}

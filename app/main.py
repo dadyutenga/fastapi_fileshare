@@ -8,6 +8,8 @@ from app.api.routers import auth, files, views
 from app.db.base import init_db
 from app.core.config import settings
 from app.api.routers import admin_auth, AdminViews
+from app.api.routers import admin_request_logs
+from app.middleware.request_logging import RequestLoggingMiddleware
 
 # Create FastAPI app
 app = FastAPI(
@@ -25,6 +27,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -34,6 +39,7 @@ app.include_router(views.router, tags=["views"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(admin_auth.router, prefix="/admin", tags=["admin-auth"])
 app.include_router(AdminViews.router, tags=["admin-views"])  # Removed prefix="/admin" here
+app.include_router(admin_request_logs.router, prefix="/admin/logs", tags=["admin-request-logs"])
 
 # Global exception handler
 @app.exception_handler(HTTPException)

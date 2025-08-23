@@ -1,0 +1,257 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Request Logs - Admin Panel{% endblock %}
+{% block page_title %}Request Logs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Filters</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Status Code</label>
+                <select id="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">All Status Codes</option>
+                    <option value="200">200 - Success</option>
+                    <option value="401">401 - Unauthorized</option>
+                    <option value="403">403 - Forbidden</option>
+                    <option value="404">404 - Not Found</option>
+                    <option value="500">500 - Server Error</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Endpoint</label>
+                <input type="text" id="endpointFilter" placeholder="e.g., /login" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Client IP</label>
+                <input type="text" id="ipFilter" placeholder="e.g., 192.168.1.1" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Min Risk Score</label>
+                <input type="number" id="riskFilter" min="0" max="100" placeholder="0-100" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+        </div>
+        <div class="mt-4">
+            <button onclick="loadLogs()" 
+                    class="bg-primary text-white px-4 py-2 rounded-md hover:bg-coral-dark">
+                Apply Filters
+            </button>
+            <button onclick="clearFilters()" 
+                    class="ml-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Stats (Last 24 Hours)</h3>
+        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600" id="totalRequests">-</div>
+                <div class="text-sm text-gray-500">Total Requests</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600" id="successRate">-</div>
+                <div class="text-sm text-gray-500">Success Rate</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-600" id="uniqueIPs">-</div>
+                <div class="text-sm text-gray-500">Unique IPs</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-red-600" id="avgResponseTime">-</div>
+                <div class="text-sm text-gray-500">Avg Response (ms)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Logs Table -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Requests</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Endpoint</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client IP</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Response Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Score</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-sm text-gray-700">
+                        Showing <span id="currentRange">1-50</span> of <span id="totalCount">0</span> results
+                    </span>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="previousPage()" id="prevBtn" 
+                            class="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400 disabled:opacity-50">
+                        Previous
+                    </button>
+                    <button onclick="nextPage()" id="nextBtn" 
+                            class="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400 disabled:opacity-50">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 0;
+let pageSize = 50;
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    loadLogs();
+});
+
+function loadStats() {
+    fetch('/admin/logs/stats')
+        .then(response => response.json())
+        .then(data => {
+            const stats = data.request_stats;
+            document.getElementById('totalRequests').textContent = stats.total_requests;
+            document.getElementById('successRate').textContent = stats.success_rate.toFixed(1) + '%';
+            document.getElementById('uniqueIPs').textContent = stats.unique_ips;
+            document.getElementById('avgResponseTime').textContent = stats.average_response_time_ms.toFixed(0);
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
+}
+
+function loadLogs() {
+    const params = new URLSearchParams({
+        limit: pageSize,
+        offset: currentPage * pageSize
+    });
+    
+    // Add filters
+    const statusFilter = document.getElementById('statusFilter').value;
+    const endpointFilter = document.getElementById('endpointFilter').value;
+    const ipFilter = document.getElementById('ipFilter').value;
+    const riskFilter = document.getElementById('riskFilter').value;
+    
+    if (statusFilter) params.append('status_code', statusFilter);
+    if (endpointFilter) params.append('endpoint', endpointFilter);
+    if (ipFilter) params.append('client_ip', ipFilter);
+    if (riskFilter) params.append('min_risk_score', riskFilter);
+    
+    fetch(`/admin/logs/requests/api?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            renderLogsTable(data.logs);
+            updatePagination(data.total);
+        })
+        .catch(error => {
+            console.error('Error loading logs:', error);
+            document.getElementById('logsTableBody').innerHTML = 
+                '<tr><td colspan="8" class="px-6 py-4 text-center text-red-500">Error loading logs</td></tr>';
+        });
+}
+
+function renderLogsTable(logs) {
+    const tbody = document.getElementById('logsTableBody');
+    
+    if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">No logs found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = logs.map(log => {
+        const time = new Date(log.timestamp).toLocaleString();
+        const statusClass = getStatusClass(log.status_code);
+        const riskClass = getRiskClass(log.risk_score);
+        
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${time}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${log.method}</td>
+                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title="${log.endpoint}">${log.endpoint}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${log.status_code}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.client_ip}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.username || 'Anonymous'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.response_time_ms ? log.response_time_ms.toFixed(0) + 'ms' : '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${riskClass}">${log.risk_score}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusClass(statusCode) {
+    if (statusCode >= 200 && statusCode < 300) return 'bg-green-100 text-green-800';
+    if (statusCode >= 400 && statusCode < 500) return 'bg-yellow-100 text-yellow-800';
+    if (statusCode >= 500) return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
+}
+
+function getRiskClass(riskScore) {
+    if (riskScore >= 70) return 'bg-red-100 text-red-800';
+    if (riskScore >= 40) return 'bg-yellow-100 text-yellow-800';
+    if (riskScore >= 20) return 'bg-orange-100 text-orange-800';
+    return 'bg-green-100 text-green-800';
+}
+
+function updatePagination(total) {
+    const start = currentPage * pageSize + 1;
+    const end = Math.min((currentPage + 1) * pageSize, total);
+    
+    document.getElementById('currentRange').textContent = `${start}-${end}`;
+    document.getElementById('totalCount').textContent = total;
+    
+    document.getElementById('prevBtn').disabled = currentPage === 0;
+    document.getElementById('nextBtn').disabled = end >= total;
+}
+
+function previousPage() {
+    if (currentPage > 0) {
+        currentPage--;
+        loadLogs();
+    }
+}
+
+function nextPage() {
+    currentPage++;
+    loadLogs();
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('endpointFilter').value = '';
+    document.getElementById('ipFilter').value = '';
+    document.getElementById('riskFilter').value = '';
+    currentPage = 0;
+    loadLogs();
+}
+</script>
+{% endblock %}
