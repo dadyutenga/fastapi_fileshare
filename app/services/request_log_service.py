@@ -140,10 +140,17 @@ class RequestLogService:
         return {
             "period_hours": hours,
             "total_attempts": total_attempts,
-            "successful_logins": successful_logins,
-            "failed_logins": failed_logins,
+            "successful_attempts": successful_logins,  # Changed key name to match frontend
+            "failed_attempts": failed_logins,  # Changed key name to match frontend
+            "suspicious_attempts": brute_force_attempts,  # Add suspicious attempts
             "success_rate": (successful_logins / total_attempts * 100) if total_attempts > 0 else 0,
             "brute_force_attempts": brute_force_attempts,
+            "unique_usernames": db.query(func.count(func.distinct(LoginAttemptLog.username))).filter(
+                LoginAttemptLog.timestamp >= cutoff_time
+            ).scalar() or 0,
+            "unique_ips": db.query(func.count(func.distinct(LoginAttemptLog.client_ip))).filter(
+                LoginAttemptLog.timestamp >= cutoff_time
+            ).scalar() or 0,
             "top_failed_ips": [{"ip": ip, "failed_count": count} for ip, count in top_failed_ips],
             "endpoints": [{"endpoint": ep, "count": count} for ep, count in endpoints]
         }

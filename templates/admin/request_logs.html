@@ -132,17 +132,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadStats() {
-    fetch('/admin/logs/stats')
-        .then(response => response.json())
+    fetch('/admin/logs/stats', {
+        credentials: 'include'  // Include cookies for authentication
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Stats data received:', data); // Debug log
             const stats = data.request_stats;
-            document.getElementById('totalRequests').textContent = stats.total_requests;
-            document.getElementById('successRate').textContent = stats.success_rate.toFixed(1) + '%';
-            document.getElementById('uniqueIPs').textContent = stats.unique_ips;
-            document.getElementById('avgResponseTime').textContent = stats.average_response_time_ms.toFixed(0);
+            document.getElementById('totalRequests').textContent = stats.total_requests || 0;
+            document.getElementById('successRate').textContent = (stats.success_rate || 0).toFixed(1) + '%';
+            document.getElementById('uniqueIPs').textContent = stats.unique_ips || 0;
+            document.getElementById('avgResponseTime').textContent = (stats.average_response_time_ms || 0).toFixed(0);
         })
         .catch(error => {
             console.error('Error loading stats:', error);
+            // Show error in the stats display
+            document.getElementById('totalRequests').textContent = 'Error';
+            document.getElementById('successRate').textContent = 'Error';
+            document.getElementById('uniqueIPs').textContent = 'Error';
+            document.getElementById('avgResponseTime').textContent = 'Error';
         });
 }
 
@@ -163,16 +176,24 @@ function loadLogs() {
     if (ipFilter) params.append('client_ip', ipFilter);
     if (riskFilter) params.append('min_risk_score', riskFilter);
     
-    fetch(`/admin/logs/requests/api?${params}`)
-        .then(response => response.json())
+    fetch(`/admin/logs/requests/api?${params}`, {
+        credentials: 'include'  // Include cookies for authentication
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Logs data received:', data); // Debug log
             renderLogsTable(data.logs);
             updatePagination(data.total);
         })
         .catch(error => {
             console.error('Error loading logs:', error);
             document.getElementById('logsTableBody').innerHTML = 
-                '<tr><td colspan="8" class="px-6 py-4 text-center text-red-500">Error loading logs</td></tr>';
+                '<tr><td colspan="8" class="px-6 py-4 text-center text-red-500">Error loading logs: ' + error.message + '</td></tr>';
         });
 }
 

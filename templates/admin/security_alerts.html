@@ -137,23 +137,42 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadSecurityOverview() {
-    fetch('/admin/logs/security/overview')
-        .then(response => response.json())
+    fetch('/admin/logs/security/overview', {
+        credentials: 'include'  // Include cookies for authentication
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('totalAlerts').textContent = data.total_alerts;
-            document.getElementById('bruteForceAttempts').textContent = data.brute_force_attempts;
-            document.getElementById('suspiciousIPs').textContent = data.suspicious_ips;
+            console.log('Security overview data received:', data); // Debug log
+            document.getElementById('totalAlerts').textContent = data.total_alerts || 0;
+            document.getElementById('bruteForceAttempts').textContent = data.brute_force_attempts || 0;
+            document.getElementById('suspiciousIPs').textContent = data.suspicious_ips || 0;
         })
         .catch(error => {
             console.error('Error loading security overview:', error);
+            document.getElementById('totalAlerts').textContent = 'Error';
+            document.getElementById('bruteForceAttempts').textContent = 'Error';
+            document.getElementById('suspiciousIPs').textContent = 'Error';
         });
 }
 
 function loadActiveThreats() {
-    fetch('/admin/logs/security/brute-force')
-        .then(response => response.json())
+    fetch('/admin/logs/security/brute-force', {
+        credentials: 'include'  // Include cookies for authentication
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            renderActiveThreats(data.alerts);
+            console.log('Active threats data received:', data); // Debug log
+            renderActiveThreats(data.alerts || []);
         })
         .catch(error => {
             console.error('Error loading active threats:', error);
@@ -212,7 +231,9 @@ function loadSecurityAlerts() {
     const alertTypeFilter = document.getElementById('alertTypeFilter').value;
     if (alertTypeFilter) params.append('alert_type', alertTypeFilter);
     
-    fetch(`/admin/logs/security/alerts/api?${params}`)
+    fetch(`/admin/logs/security/alerts/api?${params}`, {
+        credentials: 'include'  // Include cookies for authentication
+    })
         .then(response => response.json())
         .then(data => {
             renderAlertsTable(data.alerts);
@@ -306,6 +327,7 @@ function blockIP(ip = null) {
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include',  // Include cookies for authentication
         body: JSON.stringify({ ip_address: ipToBlock })
     })
     .then(response => response.json())
@@ -340,6 +362,7 @@ function unblockIP() {
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include',  // Include cookies for authentication
         body: JSON.stringify({ ip_address: ipToUnblock })
     })
     .then(response => response.json())

@@ -1,9 +1,34 @@
 {% extends "admin/layout.html" %}
 
 {% block title %}Login Attempts - Admin Panel{% endblock %}
-{% block page_title %}Login Attempts{% endblock %}
-
-{% block content %}
+{% block page_title %}Login Attempts{% endblock        .then(data => {
+            console.log('Login stats data received:', data); // Debug log
+            
+            if (data.error) {
+                console.error('API returned error:', data.error);
+                // Show error message in UI
+                document.getElementById('totalLoginAttempts').textContent = 'Error';
+                document.getElementById('successfulLogins').textContent = 'Error';
+                document.getElementById('failedLogins').textContent = 'Error';
+                document.getElementById('suspiciousAttempts').textContent = 'Error';
+                return;
+            }
+            
+            const loginStats = data.login_stats;
+            if (!loginStats) {
+                console.error('No login_stats in response:', data);
+                document.getElementById('totalLoginAttempts').textContent = 'No Data';
+                document.getElementById('successfulLogins').textContent = 'No Data';
+                document.getElementById('failedLogins').textContent = 'No Data';
+                document.getElementById('suspiciousAttempts').textContent = 'No Data';
+                return;
+            }
+            
+            console.log('Setting login stats:', loginStats); // Debug log
+            document.getElementById('totalLoginAttempts').textContent = loginStats.total_attempts || 0;
+            document.getElementById('successfulLogins').textContent = loginStats.successful_attempts || 0;
+            document.getElementById('failedLogins').textContent = loginStats.failed_attempts || 0;
+            document.getElementById('suspiciousAttempts').textContent = loginStats.suspicious_attempts || 0; block content %}
 <div class="space-y-6">
     <!-- Statistics Summary -->
     <div class="bg-white shadow rounded-lg p-6">
@@ -131,17 +156,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadLoginStats() {
-    fetch('/admin/logs/stats')
-        .then(response => response.json())
+    fetch('/admin/logs/stats', {
+        credentials: 'include'  // Include cookies for authentication
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Login stats data received:', data); // Debug log
             const loginStats = data.login_stats;
-            document.getElementById('totalLoginAttempts').textContent = loginStats.total_attempts;
-            document.getElementById('successfulLogins').textContent = loginStats.successful_attempts;
-            document.getElementById('failedLogins').textContent = loginStats.failed_attempts;
-            document.getElementById('suspiciousAttempts').textContent = loginStats.suspicious_attempts;
+            document.getElementById('totalLoginAttempts').textContent = loginStats.total_attempts || 0;
+            document.getElementById('successfulLogins').textContent = loginStats.successful_attempts || 0;
+            document.getElementById('failedLogins').textContent = loginStats.failed_attempts || 0;
+            document.getElementById('suspiciousAttempts').textContent = loginStats.suspicious_attempts || 0;
         })
         .catch(error => {
             console.error('Error loading login stats:', error);
+            // Show error in the stats display
+            document.getElementById('totalLoginAttempts').textContent = 'Error';
+            document.getElementById('successfulLogins').textContent = 'Error';
+            document.getElementById('failedLogins').textContent = 'Error';
+            document.getElementById('suspiciousAttempts').textContent = 'Error';
         });
 }
 
@@ -207,7 +245,9 @@ function loadLoginAttempts() {
     if (usernameFilter) params.append('username', usernameFilter);
     if (ipFilter) params.append('client_ip', ipFilter);
     
-    fetch(`/admin/logs/login-attempts/api?${params}`)
+    fetch(`/admin/logs/login-attempts/api?${params}`, {
+        credentials: 'include'  // Include cookies for authentication
+    })
         .then(response => response.json())
         .then(data => {
             renderLoginAttemptsTable(data.attempts);
