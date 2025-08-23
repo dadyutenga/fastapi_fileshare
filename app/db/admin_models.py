@@ -10,8 +10,8 @@ from .base import Base
 # Admin-specific enums
 class AdminRole(enum.Enum):
     SUPER_ADMIN = "super_admin"
-    ADMIN = "admin"
-    MODERATOR = "moderator"
+   
+  
 
 class AdminPermission(enum.Enum):
     # User management
@@ -21,9 +21,7 @@ class AdminPermission(enum.Enum):
     SUSPEND_USERS = "suspend_users"
     
     # File management
-    VIEW_ALL_FILES = "view_all_files"
-    DELETE_ANY_FILE = "delete_any_file"
-    MODERATE_FILES = "moderate_files"
+    DELETE_ANY_FILE = "delete_any_file" 
     
     # System management
     VIEW_SYSTEM_STATS = "view_system_stats"
@@ -31,8 +29,7 @@ class AdminPermission(enum.Enum):
     VIEW_LOGS = "view_logs"
     
     # Admin management (super admin only)
-    MANAGE_ADMINS = "manage_admins"
-    ASSIGN_ROLES = "assign_roles"
+    
 
 class Admin(Base):
     __tablename__ = "admins"
