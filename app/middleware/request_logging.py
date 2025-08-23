@@ -15,6 +15,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.request_log_models import RequestLog, LoginAttemptLog, SecurityAlert
 from app.core.config import settings
+from app.db.base import SessionLocal
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log all HTTP requests to the database"""
@@ -27,9 +28,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         self.exclude_paths = {
             '/static',
             '/favicon.ico',
-            '/robots.txt',
-            '/health',
-            '/metrics'
+            '/robots.txt'
         }
         
         # Track login attempts for brute force detection
@@ -157,12 +156,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     
     def _log_request_async(self, **kwargs):
         """Log request to database (should be called asynchronously)"""
-        if not self.db_session_factory:
-            return
-        
         try:
-            # Create database session
-            db = self.db_session_factory()
+            # Create database session using the existing SessionLocal
+            db = SessionLocal()
             
             # Calculate risk score
             risk_score = self._calculate_risk_score(kwargs)

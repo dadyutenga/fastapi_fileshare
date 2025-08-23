@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.api.routers import auth, files, views
-from app.db.base import init_db
+from app.db.base import init_db, SessionLocal
 from app.core.config import settings
 from app.api.routers import admin_auth, AdminViews
 from app.api.routers import admin_request_logs
