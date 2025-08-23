@@ -10,6 +10,7 @@ from .base import Base
 # Admin-specific enums
 class AdminRole(enum.Enum):
     SUPER_ADMIN = "super_admin"
+    ADMIN = "admin"
    
   
 
@@ -20,13 +21,9 @@ class AdminPermission(enum.Enum):
     DELETE_USERS = "delete_users"
     SUSPEND_USERS = "suspend_users"
     
-    # File management
-    DELETE_ANY_FILE = "delete_any_file" 
-    
     # System management
     VIEW_SYSTEM_STATS = "view_system_stats"
     MANAGE_SETTINGS = "manage_settings"
-    VIEW_LOGS = "view_logs"
     
     # Admin management (super admin only)
     
@@ -41,7 +38,7 @@ class Admin(Base):
     
     # Admin specific fields
     full_name = Column(String(200), nullable=False)
-    role = Column(Enum(AdminRole), default=AdminRole.MODERATOR)
+    role = Column(Enum(AdminRole), default=AdminRole.ADMIN)
     is_active = Column(Boolean, default=True)
     is_super_admin = Column(Boolean, default=False)
     
@@ -59,9 +56,6 @@ class Admin(Base):
     last_activity = Column(DateTime, default=datetime.utcnow)
     session_token = Column(String(255), nullable=True)  # For session management
     
-    # Relationships
-    admin_logs = relationship("AdminLog", back_populates="admin")
-    
     def has_permission(self, permission: AdminPermission) -> bool:
         """Check if admin has specific permission based on role"""
         role_permissions = {
@@ -70,16 +64,6 @@ class Admin(Base):
                 AdminPermission.VIEW_USERS,
                 AdminPermission.EDIT_USERS,
                 AdminPermission.SUSPEND_USERS,
-                AdminPermission.VIEW_ALL_FILES,
-                AdminPermission.DELETE_ANY_FILE,
-                AdminPermission.MODERATE_FILES,
-                AdminPermission.VIEW_SYSTEM_STATS,
-                AdminPermission.VIEW_LOGS,
-            ],
-            AdminRole.MODERATOR: [
-                AdminPermission.VIEW_USERS,
-                AdminPermission.VIEW_ALL_FILES,
-                AdminPermission.MODERATE_FILES,
                 AdminPermission.VIEW_SYSTEM_STATS,
             ]
         }
@@ -107,28 +91,6 @@ class Admin(Base):
     def update_last_activity(self):
         """Update last activity timestamp"""
         self.last_activity = datetime.utcnow()
-
-class AdminLog(Base):
-    __tablename__ = "admin_logs"
-    
-    id = Column(CHAR(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    admin_id = Column(CHAR(36), ForeignKey("admins.id"), nullable=False)
-    
-    # Log details
-    action = Column(String(100), nullable=False)  # e.g., "DELETE_USER", "SUSPEND_USER"
-    target_type = Column(String(50), nullable=True)  # "USER", "FILE", "ADMIN"
-    target_id = Column(String(100), nullable=True)  # ID of the target
-    details = Column(Text, nullable=True)  # Additional details in JSON format
-    
-    # Request information
-    ip_address = Column(String(45), nullable=True)  # Support IPv6
-    user_agent = Column(Text, nullable=True)
-    
-    # Timestamps
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
-    
-    # Relationships
-    admin = relationship("Admin", back_populates="admin_logs")
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"

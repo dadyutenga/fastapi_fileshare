@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
 from fastapi import HTTPException, status
 
-from app.db.admin_models import Admin, AdminLog, SystemSettings, AdminRole, AdminPermission
-from app.db.models import User, File as FileModel
-from app.schemas.admin import AdminCreate, AdminUpdate, AdminLogEntry, AdminDashboardStats
+from app.db.admin_models import Admin, SystemSettings, AdminRole, AdminPermission
+from app.db.models import User
+from app.schemas.admin import AdminCreate, AdminUpdate, AdminDashboardStats
 from app.core.security import get_password_hash, verify_password, create_access_token
 
 class AdminAuthService:
@@ -51,12 +51,6 @@ class AdminAuthService:
         db.commit()
         db.refresh(admin)
         
-        # Log the action
-        AdminAuthService.log_admin_action(
-            db, creator_id, "CREATE_ADMIN", "ADMIN", admin.id,
-            f"Created admin: {admin.admin_username} with role: {admin.role.value}"
-        )
-        
         return admin
     
     @staticmethod
@@ -85,12 +79,6 @@ class AdminAuthService:
         if not verify_password(password, admin.hashed_password):
             admin.increment_failed_attempts()
             db.commit()
-            
-            AdminAuthService.log_admin_action(
-                db, admin.id, "FAILED_LOGIN", "ADMIN", admin.id,
-                f"Failed login attempt from IP: {ip_address}"
-            )
-            
             return None
         
         # Successful login
@@ -98,11 +86,6 @@ class AdminAuthService:
         admin.last_login = datetime.utcnow()
         admin.update_last_activity()
         db.commit()
-        
-        AdminAuthService.log_admin_action(
-            db, admin.id, "LOGIN", "ADMIN", admin.id,
-            f"Successful login from IP: {ip_address}"
-        )
         
         return admin
     
@@ -121,66 +104,6 @@ class AdminAuthService:
             )
     
     @staticmethod
-    def log_admin_action(
-        db: Session, 
-        admin_id: str, 
-        action: str, 
-        target_type: str = None,
-        target_id: str = None, 
-        details: str = None,
-        ip_address: str = None,
-        user_agent: str = None
-    ):
-        """Log admin action"""
-        log_entry = AdminLog(
-            admin_id=admin_id,
-            action=action,
-            target_type=target_type,
-            target_id=target_id,
-            details=details,
-            ip_address=ip_address,
-            user_agent=user_agent
-        )
-        
-        db.add(log_entry)
-        db.commit()
-    
-    @staticmethod
-    def get_admin_logs(
-        db: Session, 
-        admin_id: Optional[str] = None,
-        action: Optional[str] = None,
-        limit: int = 100,
-        offset: int = 0
-    ) -> List[AdminLogEntry]:
-        """Get admin activity logs"""
-        query = db.query(AdminLog).join(Admin)
-        
-        if admin_id:
-            query = query.filter(AdminLog.admin_id == admin_id)
-        
-        if action:
-            query = query.filter(AdminLog.action == action)
-        
-        logs = query.order_by(desc(AdminLog.timestamp)).offset(offset).limit(limit).all()
-        
-        return [
-            AdminLogEntry(
-                id=log.id,
-                admin_id=log.admin_id,
-                admin_username=log.admin.admin_username,
-                action=log.action,
-                target_type=log.target_type,
-                target_id=log.target_id,
-                details=log.details,
-                ip_address=log.ip_address,
-                user_agent=log.user_agent,
-                timestamp=log.timestamp
-            )
-            for log in logs
-        ]
-    
-    @staticmethod
     def get_dashboard_stats(db: Session) -> AdminDashboardStats:
         """Get admin dashboard statistics"""
         # User statistics
@@ -189,50 +112,22 @@ class AdminAuthService:
         inactive_users = total_users - active_users
         premium_users = db.query(User).filter(User.is_premium == True).count()
         
-        # File statistics
-        total_files = db.query(FileModel).filter(FileModel.is_active == True).count()
-        total_storage = db.query(func.sum(FileModel.file_size)).filter(FileModel.is_active == True).scalar() or 0
-        total_downloads = db.query(func.sum(FileModel.download_count)).scalar() or 0
-        
         # Today's statistics
         today = datetime.utcnow().date()
-        files_today = db.query(FileModel).filter(
-            and_(
-                FileModel.upload_time >= today,
-                FileModel.is_active == True
-            )
-        ).count()
-        
         users_today = db.query(User).filter(User.created_at >= today).count()
-        
-        # Top file types
-        file_types = db.query(
-            FileModel.content_type,
-            func.count(FileModel.id).label('count')
-        ).filter(
-            FileModel.is_active == True
-        ).group_by(FileModel.content_type).order_by(desc('count')).limit(10).all()
-        
-        top_file_types = [
-            {"content_type": ft.content_type, "count": ft.count}
-            for ft in file_types
-        ]
-        
-        # Recent activity
-        recent_activity = AdminAuthService.get_admin_logs(db, limit=10)
         
         return AdminDashboardStats(
             total_users=total_users,
             active_users=active_users,
             inactive_users=inactive_users,
             premium_users=premium_users,
-            total_files=total_files,
-            total_storage_used=total_storage,
-            total_downloads=total_downloads,
-            files_uploaded_today=files_today,
+            total_files=0,  # No file stats for privacy
+            total_storage_used=0,  # No storage stats for privacy  
+            total_downloads=0,  # No download stats for privacy
+            files_uploaded_today=0,  # No file stats for privacy
             new_users_today=users_today,
-            top_file_types=top_file_types,
-            recent_activity=recent_activity
+            top_file_types=[],  # No file type stats for privacy
+            recent_activity=[]  # No activity logs for privacy
         )
 
 class AdminUserManagementService:
@@ -269,11 +164,6 @@ class AdminUserManagementService:
         total = query.count()
         users = query.order_by(desc(User.created_at)).offset(offset).limit(limit).all()
         
-        AdminAuthService.log_admin_action(
-            db, admin.id, "VIEW_USERS", "USER", None,
-            f"Viewed users list (search: {search}, filter: {plan_filter})"
-        )
-        
         return {
             "users": users,
             "total": total,
@@ -293,45 +183,26 @@ class AdminUserManagementService:
         user.is_active = not user.is_active
         db.commit()
         
-        action = "UNSUSPEND_USER" if user.is_active else "SUSPEND_USER"
-        AdminAuthService.log_admin_action(
-            db, admin.id, action, "USER", user_id,
-            f"{'Unsuspended' if user.is_active else 'Suspended'} user: {user.username}. Reason: {reason}"
-        )
-        
         return user
     
     @staticmethod
     def delete_user_and_files(db: Session, admin: Admin, user_id: str) -> Dict[str, Any]:
-        """Delete user and all their files (dangerous operation)"""
+        """Delete user (files are not accessible to admin for privacy)"""
         AdminAuthService.require_permission(admin, AdminPermission.DELETE_USERS)
         
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Get user's files
-        user_files = db.query(FileModel).filter(FileModel.owner_id == user_id).all()
-        file_count = len(user_files)
-        
-        # Delete files
-        for file in user_files:
-            db.delete(file)
-        
-        # Delete user
+        # Note: Files are not deleted by admin for privacy reasons
+        # User data deletion only removes user account
         username = user.username
         db.delete(user)
         db.commit()
         
-        AdminAuthService.log_admin_action(
-            db, admin.id, "DELETE_USER", "USER", user_id,
-            f"Deleted user: {username} and {file_count} files"
-        )
-        
         return {
             "deleted_user": username,
-            "deleted_files": file_count,
-            "message": f"Successfully deleted user {username} and {file_count} files"
+            "message": f"Successfully deleted user {username}"
         }
 
 # Global service instances

@@ -117,25 +117,5 @@ def require_permission(permission: AdminPermission):
 def require_user_management(admin: Admin = Depends(require_permission(AdminPermission.VIEW_USERS))) -> Admin:
     return admin
 
-def require_file_management(admin: Admin = Depends(require_permission(AdminPermission.VIEW_ALL_FILES))) -> Admin:
-    return admin
-
 def require_system_management(admin: Admin = Depends(require_permission(AdminPermission.VIEW_SYSTEM_STATS))) -> Admin:
     return admin
-
-def require_admin_management(admin: Admin = Depends(require_permission(AdminPermission.MANAGE_ADMINS))) -> Admin:
-    return admin
-
-def get_client_ip(request: Request) -> str:
-    """Get client IP address from request"""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip
-    return request.client.host if request.client else "unknown"
-
-def get_user_agent(request: Request) -> str:
-    """Get user agent from request"""
-    return request.headers.get("User-Agent", "unknown")

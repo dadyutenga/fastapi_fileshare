@@ -74,22 +74,6 @@
                     </a>
                     {% endif %}
                     
-                    {% if admin.has_permission(admin_permission.VIEW_ALL_FILES) %}
-                    <a href="/admin/files" 
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-                        <i class="fas fa-folder mr-3"></i>
-                        Manage Files
-                    </a>
-                    {% endif %}
-                    
-                    {% if admin.has_permission(admin_permission.VIEW_LOGS) %}
-                    <a href="/admin/logs" 
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-                        <i class="fas fa-clipboard-list mr-3"></i>
-                        Activity Logs
-                    </a>
-                    {% endif %}
-                    
                     {% if admin.is_super_admin %}
                     <a href="/admin/admins" 
                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">

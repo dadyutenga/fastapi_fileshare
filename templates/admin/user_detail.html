@@ -99,10 +99,6 @@
                                 {% endif %}
                             </dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Files Count</dt>
-                            <dd class="text-sm text-gray-900">{{ user_files|length }} files</dd>
-                        </div>
                         {% if user.is_premium and user.premium_expires_at %}
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Premium Expires</dt>
@@ -139,71 +135,11 @@
             </div>
         </div>
     </div>
-
-    <!-- User Files -->
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Recent Files ({{ user_files|length }} total)</h3>
-        </div>
-        {% if user_files %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Privacy</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Downloads</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for file in user_files %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ file.original_filename[:30] }}{% if file.original_filename|length > 30 %}...{% endif %}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {% set size_mb = file.file_size / (1024 * 1024) %}
-                            {{ "%.2f"|format(size_mb) }} MB
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ file.content_type or 'Unknown' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            {% if file.is_public %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    Public
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    Private
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ file.download_count }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="px-4 py-5 sm:px-6">
-            <p class="text-gray-500 text-center py-4">This user has not uploaded any files yet.</p>
-        </div>
-        {% endif %}
-    </div>
 </div>
 
 <script>
 function deleteUser(userId, username) {
-    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone and will delete all their files.`)) {
+    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
         fetch(`/admin/users/${userId}`, {
             method: 'DELETE',
             headers: {

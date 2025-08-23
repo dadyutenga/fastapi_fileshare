@@ -13,14 +13,11 @@ from app.api.admin_deps import (
     get_current_admin, 
     require_super_admin,
     require_user_management,
-    require_file_management,
-    require_system_management,
-    get_client_ip,
-    get_user_agent
+    require_system_management
 )
 from app.db.admin_models import Admin, AdminPermission
-from app.db.models import User, File as FileModel
-from app.schemas.admin import AdminDashboardStats, AdminLogEntry
+from app.db.models import User
+from app.schemas.admin import AdminDashboardStats
 from app.services.admin_auth_service import AdminAuthService, AdminUserManagementService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -97,18 +94,12 @@ async def admin_user_detail(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get user's files
-    user_files = db.query(FileModel).filter(
-        FileModel.owner_id == user_id
-    ).order_by(FileModel.upload_time.desc()).limit(10).all()
-    
     return templates.TemplateResponse(
         "admin/user_detail.html",
         {
             "request": request,
             "admin": current_admin,
             "user": user,
-            "user_files": user_files,
             "admin_permission": AdminPermission  # Add this line
         }
     )
@@ -122,8 +113,6 @@ async def admin_suspend_user(
     current_admin: Admin = Depends(require_user_management)
 ):
     """Suspend/unsuspend user"""
-    ip_address = get_client_ip(request)
-    
     user = AdminUserManagementService.suspend_user(db, current_admin, user_id, reason)
     
     return JSONResponse(content={
@@ -146,115 +135,6 @@ async def admin_delete_user(
     result = AdminUserManagementService.delete_user_and_files(db, current_admin, user_id)
     
     return JSONResponse(content=result)
-
-@router.get("/files", response_class=HTMLResponse)
-async def admin_files_list(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(require_file_management),
-    page: int = Query(1, ge=1),
-    search: Optional[str] = Query(None)
-):
-    """Admin files management page"""
-    limit = 50
-    offset = (page - 1) * limit
-    
-    query = db.query(FileModel).filter(FileModel.is_active == True)
-    
-    if search:
-        query = query.filter(FileModel.original_filename.contains(search))
-    
-    total = query.count()
-    files = query.order_by(FileModel.upload_time.desc()).offset(offset).limit(limit).all()
-    
-    AdminAuthService.log_admin_action(
-        db, current_admin.id, "VIEW_FILES", "FILE", None,
-        f"Viewed files list (search: {search})"
-    )
-    
-    return templates.TemplateResponse(
-        "admin/files.html",
-        {
-            "request": request,
-            "admin": current_admin,
-            "files": files,
-            "total": total,
-            "page": page,
-            "pages": (total + limit - 1) // limit,
-            "search": search,
-            "admin_permission": AdminPermission  # Add this line
-        }
-    )
-
-@router.delete("/files/{file_id}")
-async def admin_delete_file(
-    request: Request,
-    file_id: str,
-    reason: str = Form(""),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(require_file_management)
-):
-    """Delete any file (admin override)"""
-    AdminAuthService.require_permission(current_admin, AdminPermission.DELETE_ANY_FILE)
-    
-    file = db.query(FileModel).filter(FileModel.file_id == file_id).first()
-    if not file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    filename = file.original_filename
-    owner_username = file.owner.username if file.owner else "unknown"
-    
-    # Soft delete
-    file.is_active = False
-    db.commit()
-    
-    AdminAuthService.log_admin_action(
-        db, current_admin.id, "DELETE_FILE", "FILE", file_id,
-        f"Deleted file: {filename} owned by {owner_username}. Reason: {reason}"
-    )
-    
-    return JSONResponse(content={
-        "success": True,
-        "message": f"File '{filename}' deleted successfully"
-    })
-
-@router.get("/logs", response_class=HTMLResponse)
-async def admin_logs(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
-    page: int = Query(1, ge=1),
-    action: Optional[str] = Query(None)
-):
-    """Admin activity logs"""
-    limit = 50
-    offset = (page - 1) * limit
-    
-    logs = AdminAuthService.get_admin_logs(db, action=action, limit=limit, offset=offset)
-    
-    return templates.TemplateResponse(
-        "admin/logs.html",
-        {
-            "request": request,
-            "admin": current_admin,
-            "logs": logs,
-            "page": page,
-            "action_filter": action,
-            "admin_permission": AdminPermission  # Add this line
-        }
-    )
-
-@router.get("/logs/api", response_model=List[AdminLogEntry])
-async def get_admin_logs_api(
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
-    limit: int = Query(50, le=200),
-    offset: int = Query(0),
-    action: Optional[str] = Query(None),
-    admin_id: Optional[str] = Query(None)
-):
-    """Get admin logs as JSON"""
-    return AdminAuthService.get_admin_logs(db, admin_id, action, limit, offset)
 
 @router.get("/admins", response_class=HTMLResponse)
 async def admin_management(
@@ -291,13 +171,6 @@ async def toggle_admin_active(
     
     admin.is_active = not admin.is_active
     db.commit()
-    
-    AdminAuthService.log_admin_action(
-        db, current_admin.id, 
-        "ACTIVATE_ADMIN" if admin.is_active else "DEACTIVATE_ADMIN",
-        "ADMIN", admin_id,
-        f"{'Activated' if admin.is_active else 'Deactivated'} admin: {admin.admin_username}"
-    )
     
     return JSONResponse(content={
         "success": True,

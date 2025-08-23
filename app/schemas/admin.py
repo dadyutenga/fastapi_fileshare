@@ -7,27 +7,20 @@ from enum import Enum
 class AdminRole(str, Enum):
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
-    MODERATOR = "moderator"
 
 class AdminPermission(str, Enum):
     VIEW_USERS = "view_users"
     EDIT_USERS = "edit_users"
     DELETE_USERS = "delete_users"
     SUSPEND_USERS = "suspend_users"
-    VIEW_ALL_FILES = "view_all_files"
-    DELETE_ANY_FILE = "delete_any_file"
-    MODERATE_FILES = "moderate_files"
     VIEW_SYSTEM_STATS = "view_system_stats"
     MANAGE_SETTINGS = "manage_settings"
-    VIEW_LOGS = "view_logs"
-    MANAGE_ADMINS = "manage_admins"
-    ASSIGN_ROLES = "assign_roles"
 
 class AdminBase(BaseModel):
     admin_username: str
     admin_email: EmailStr
     full_name: str
-    role: AdminRole = AdminRole.MODERATOR
+    role: AdminRole = AdminRole.ADMIN
 
 class AdminCreate(AdminBase):
     password: str
@@ -78,22 +71,6 @@ class AdminProfile(BaseModel):
     class Config:
         from_attributes = True
 
-class AdminLogEntry(BaseModel):
-    """Admin activity log entry"""
-    id: str
-    admin_id: str
-    admin_username: str
-    action: str
-    target_type: Optional[str] = None
-    target_id: Optional[str] = None
-    details: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    timestamp: datetime
-
-    class Config:
-        from_attributes = True
-
 class AdminDashboardStats(BaseModel):
     """Admin dashboard statistics"""
     total_users: int
@@ -106,7 +83,7 @@ class AdminDashboardStats(BaseModel):
     files_uploaded_today: int
     new_users_today: int
     top_file_types: List[Dict[str, Any]]
-    recent_activity: List[AdminLogEntry]
+    recent_activity: List[Dict[str, Any]]  # Empty list for privacy
 
 class SystemSetting(BaseModel):
     """System setting model"""
