@@ -101,11 +101,13 @@
 
                 <!-- Logout -->
                 <div class="px-6 py-4 border-t border-gray-600">
-                    <a href="/admin/logout" 
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-red-300 hover:text-red-200 hover:bg-red-900 transition-colors">
-                        <i class="fas fa-sign-out-alt mr-3"></i>
-                        Logout
-                    </a>
+                    <form method="POST" action="/admin/logout" class="w-full">
+                        <button type="submit" 
+                               class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-red-300 hover:text-red-200 hover:bg-red-900 transition-colors">
+                            <i class="fas fa-sign-out-alt mr-3"></i>
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -162,37 +164,5 @@
             </main>
         </div>
     </div>
-
-    <script>
-        // Auto-refresh dashboard stats every 30 seconds
-        if (window.location.pathname === '/admin/dashboard') {
-            setInterval(() => {
-                fetch('/admin/dashboard/stats')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Update dashboard numbers if elements exist
-                        const updateElement = (id, value) => {
-                            const elem = document.getElementById(id);
-                            if (elem) elem.textContent = value;
-                        };
-                        
-                        updateElement('total-users', data.total_users);
-                        updateElement('active-users', data.active_users);
-                        updateElement('total-files', data.total_files);
-                        updateElement('files-today', data.files_uploaded_today);
-                    })
-                    .catch(console.error);
-            }, 30000);
-        }
-
-        // Confirm dangerous actions
-        document.addEventListener('click', function(e) {
-            if (e.target.matches('[data-confirm]')) {
-                if (!confirm(e.target.getAttribute('data-confirm'))) {
-                    e.preventDefault();
-                }
-            }
-        });
-    </script>
 </body>
 </html>

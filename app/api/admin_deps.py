@@ -14,25 +14,44 @@ from app.api.deps import get_db
 from app.db.admin_models import Admin, AdminPermission
 from app.services.admin_auth_service import AdminAuthService
 
-# Admin-specific security scheme
-admin_security = HTTPBearer(scheme_name="AdminBearer")
+# Admin-specific security scheme (optional for API)
+admin_security = HTTPBearer(scheme_name="AdminBearer", auto_error=False)
+
+def get_admin_token_from_cookie_or_header(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(admin_security)
+) -> Optional[str]:
+    """Get admin token from cookie or Authorization header"""
+    # First try cookie (for web interface)
+    admin_token = request.cookies.get("admin_token")
+    if admin_token:
+        return admin_token
+    
+    # Then try Authorization header (for API)
+    if credentials:
+        return credentials.credentials
+    
+    return None
 
 def get_current_admin(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(admin_security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    token: Optional[str] = Depends(get_admin_token_from_cookie_or_header)
 ) -> Admin:
     """Get current authenticated admin"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid admin credentials",
+        detail="Not authenticated",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    if not token:
+        raise credentials_exception
     
     try:
         # Decode JWT token
         payload = jwt.decode(
-            credentials.credentials, 
+            token, 
             settings.SECRET_KEY, 
             algorithms=[settings.ALGORITHM]
         )
@@ -109,16 +128,12 @@ def require_admin_management(admin: Admin = Depends(require_permission(AdminPerm
 
 def get_client_ip(request: Request) -> str:
     """Get client IP address from request"""
-    # Check for forwarded headers first (for reverse proxies)
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
     real_ip = request.headers.get("X-Real-IP")
     if real_ip:
         return real_ip
-    
-    # Fallback to direct connection
     return request.client.host if request.client else "unknown"
 
 def get_user_agent(request: Request) -> str:

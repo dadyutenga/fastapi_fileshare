@@ -33,7 +33,7 @@ app.include_router(files.router, prefix="/files", tags=["files"])
 app.include_router(views.router, tags=["views"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(admin_auth.router, prefix="/admin", tags=["admin-auth"])
-app.include_router(AdminViews.router, prefix="/admin", tags=["admin-views"])
+app.include_router(AdminViews.router, tags=["admin-views"])  # Removed prefix="/admin" here
 
 # Global exception handler
 @app.exception_handler(HTTPException)

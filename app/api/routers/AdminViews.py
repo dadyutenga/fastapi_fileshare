@@ -40,7 +40,8 @@ async def admin_dashboard(
         {
             "request": request,
             "admin": current_admin,
-            "stats": stats
+            "stats": stats,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
@@ -79,7 +80,8 @@ async def admin_users_list(
             "page": result["page"],
             "pages": result["pages"],
             "search": search,
-            "plan_filter": plan_filter
+            "plan_filter": plan_filter,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
@@ -106,7 +108,8 @@ async def admin_user_detail(
             "request": request,
             "admin": current_admin,
             "user": user,
-            "user_files": user_files
+            "user_files": user_files,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
@@ -178,7 +181,8 @@ async def admin_files_list(
             "total": total,
             "page": page,
             "pages": (total + limit - 1) // limit,
-            "search": search
+            "search": search,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
@@ -235,7 +239,8 @@ async def admin_logs(
             "admin": current_admin,
             "logs": logs,
             "page": page,
-            "action_filter": action
+            "action_filter": action,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
@@ -265,7 +270,8 @@ async def admin_management(
         {
             "request": request,
             "admin": current_admin,
-            "admins": admins
+            "admins": admins,
+            "admin_permission": AdminPermission  # Add this line
         }
     )
 
