@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.api.deps import get_db
 from app.api.admin_deps import get_current_admin, require_super_admin
-from app.db.admin_models import Admin
+from app.db.admin_models import Admin, AdminPermission
 from app.services.request_log_service import RequestLogService
 
 router = APIRouter(tags=["admin-request-logs"])
@@ -29,7 +29,8 @@ async def admin_request_logs_page(
         {
             "request": request,
             "admin": current_admin,
-            "page_title": "Request Logs"
+            "page_title": "Request Logs",
+            "admin_permission": AdminPermission
         }
     )
 
@@ -46,28 +47,59 @@ async def get_request_logs_api(
 ) -> Dict[str, Any]:
     """API endpoint to get request logs with filtering"""
     
-    logs = RequestLogService.get_recent_requests(
-        db=db,
-        limit=limit,
-        offset=offset,
-        status_code=status_code,
-        endpoint=endpoint,
-        client_ip=client_ip,
-        min_risk_score=min_risk_score
-    )
-    
-    return {
-        "logs": logs,
-        "total": len(logs),
-        "limit": limit,
-        "offset": offset,
-        "filters": {
-            "status_code": status_code,
-            "endpoint": endpoint,
-            "client_ip": client_ip,
-            "min_risk_score": min_risk_score
+    try:
+        logs = RequestLogService.get_recent_requests(
+            db=db,
+            limit=limit,
+            offset=offset,
+            status_code=status_code,
+            endpoint=endpoint,
+            client_ip=client_ip,
+            min_risk_score=min_risk_score
+        )
+        
+        # Get total count for pagination
+        from app.db.request_log_models import RequestLog
+        from sqlalchemy import and_
+        
+        query = db.query(RequestLog)
+        if status_code:
+            query = query.filter(RequestLog.status_code == status_code)
+        if endpoint:
+            query = query.filter(RequestLog.endpoint.contains(endpoint))
+        if client_ip:
+            query = query.filter(RequestLog.client_ip == client_ip)
+        if min_risk_score:
+            query = query.filter(RequestLog.risk_score >= min_risk_score)
+        
+        total = query.count()
+        
+        return {
+            "logs": logs,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "filters": {
+                "status_code": status_code,
+                "endpoint": endpoint,
+                "client_ip": client_ip,
+                "min_risk_score": min_risk_score
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "logs": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "error": str(e),
+            "filters": {
+                "status_code": status_code,
+                "endpoint": endpoint,
+                "client_ip": client_ip,
+                "min_risk_score": min_risk_score
+            }
+        }
 
 @router.get("/stats")
 async def get_request_stats_api(
@@ -77,25 +109,58 @@ async def get_request_stats_api(
 ) -> Dict[str, Any]:
     """Get comprehensive request statistics"""
     
-    # Get general request stats
-    request_stats = RequestLogService.get_request_stats(db, hours)
-    
-    # Get login attempt stats
-    login_stats = RequestLogService.get_login_attempt_stats(db, hours)
-    
-    # Get security analysis
-    security_analysis = RequestLogService.get_security_analysis(db, hours)
-    
-    # Get hourly distribution
-    hourly_distribution = RequestLogService.get_hourly_request_distribution(db, hours)
-    
-    return {
-        "request_stats": request_stats,
-        "login_stats": login_stats,
-        "security_analysis": security_analysis,
-        "hourly_distribution": hourly_distribution,
-        "generated_at": datetime.utcnow().isoformat()
-    }
+    try:
+        # Get general request stats
+        request_stats = RequestLogService.get_request_stats(db, hours)
+        
+        # Get login attempt stats
+        login_stats = RequestLogService.get_login_attempt_stats(db, hours)
+        
+        # Get security analysis
+        security_analysis = RequestLogService.get_security_analysis(db, hours)
+        
+        # Get hourly distribution
+        hourly_distribution = RequestLogService.get_hourly_request_distribution(db, hours)
+        
+        return {
+            "request_stats": request_stats,
+            "login_stats": login_stats,
+            "security_analysis": security_analysis,
+            "hourly_distribution": hourly_distribution,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        # Return empty stats if there's an error
+        return {
+            "request_stats": {
+                "total_requests": 0,
+                "successful_requests": 0,
+                "error_requests": 0,
+                "unique_ips": 0,
+                "average_response_time_ms": 0,
+                "success_rate": 0,
+                "top_endpoints": [],
+                "methods_distribution": [],
+                "status_codes_distribution": []
+            },
+            "login_stats": {
+                "total_attempts": 0,
+                "successful_attempts": 0,
+                "failed_attempts": 0,
+                "suspicious_attempts": 0,
+                "unique_usernames": 0,
+                "unique_ips": 0
+            },
+            "security_analysis": {
+                "high_risk_requests": 0,
+                "suspicious_ips": [],
+                "total_security_alerts": 0,
+                "brute_force_attempts": 0
+            },
+            "hourly_distribution": [],
+            "generated_at": datetime.utcnow().isoformat(),
+            "error": str(e)
+        }
 
 @router.get("/analytics", response_class=HTMLResponse)
 async def admin_analytics_page(
@@ -125,7 +190,8 @@ async def admin_login_attempts_page(
         {
             "request": request,
             "admin": current_admin,
-            "page_title": "Login Attempts"
+            "page_title": "Login Attempts",
+            "admin_permission": AdminPermission
         }
     )
 
@@ -141,26 +207,54 @@ async def get_login_attempts_api(
 ) -> Dict[str, Any]:
     """API endpoint to get login attempts with filtering"""
     
-    attempts = RequestLogService.get_login_attempts(
-        db=db,
-        limit=limit,
-        offset=offset,
-        success=success,
-        username=username,
-        client_ip=client_ip
-    )
-    
-    return {
-        "attempts": attempts,
-        "total": len(attempts),
-        "limit": limit,
-        "offset": offset,
-        "filters": {
-            "success": success,
-            "username": username,
-            "client_ip": client_ip
+    try:
+        attempts = RequestLogService.get_login_attempts(
+            db=db,
+            limit=limit,
+            offset=offset,
+            success=success,
+            username=username,
+            client_ip=client_ip
+        )
+        
+        # Get total count for pagination
+        from app.db.request_log_models import LoginAttemptLog
+        from sqlalchemy import and_
+        
+        query = db.query(LoginAttemptLog)
+        if success is not None:
+            query = query.filter(LoginAttemptLog.success == success)
+        if username:
+            query = query.filter(LoginAttemptLog.username.ilike(f"%{username}%"))
+        if client_ip:
+            query = query.filter(LoginAttemptLog.client_ip == client_ip)
+        
+        total = query.count()
+        
+        return {
+            "attempts": attempts,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "filters": {
+                "success": success,
+                "username": username,
+                "client_ip": client_ip
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "attempts": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "error": str(e),
+            "filters": {
+                "success": success,
+                "username": username,
+                "client_ip": client_ip
+            }
+        }
 
 @router.get("/security", response_class=HTMLResponse)
 async def admin_security_page(
@@ -174,7 +268,8 @@ async def admin_security_page(
         {
             "request": request,
             "admin": current_admin,
-            "page_title": "Security Alerts"
+            "page_title": "Security Alerts",
+            "admin_permission": AdminPermission
         }
     )
 
@@ -186,13 +281,21 @@ async def get_security_overview_api(
 ) -> Dict[str, Any]:
     """Get security overview statistics"""
     
-    security_analysis = RequestLogService.get_security_analysis(db, hours)
-    
-    return {
-        "total_alerts": security_analysis.get("total_security_alerts", 0),
-        "brute_force_attempts": security_analysis.get("brute_force_attempts", 0),
-        "suspicious_ips": security_analysis.get("suspicious_ips_count", 0)
-    }
+    try:
+        security_analysis = RequestLogService.get_security_analysis(db, hours)
+        
+        return {
+            "total_alerts": security_analysis.get("total_security_alerts", 0),
+            "brute_force_attempts": security_analysis.get("brute_force_attempts", 0),
+            "suspicious_ips": security_analysis.get("suspicious_ips_count", 0)
+        }
+    except Exception as e:
+        return {
+            "total_alerts": 0,
+            "brute_force_attempts": 0,
+            "suspicious_ips": 0,
+            "error": str(e)
+        }
 
 @router.get("/security/brute-force")
 async def get_brute_force_alerts_api(
@@ -201,11 +304,17 @@ async def get_brute_force_alerts_api(
 ) -> Dict[str, Any]:
     """Get active brute force alerts"""
     
-    alerts = RequestLogService.get_active_brute_force_alerts(db)
-    
-    return {
-        "alerts": alerts
-    }
+    try:
+        alerts = RequestLogService.get_active_brute_force_alerts(db)
+        
+        return {
+            "alerts": alerts
+        }
+    except Exception as e:
+        return {
+            "alerts": [],
+            "error": str(e)
+        }
 
 @router.get("/security/alerts/api")
 async def get_security_alerts_api(
@@ -217,22 +326,43 @@ async def get_security_alerts_api(
 ) -> Dict[str, Any]:
     """API endpoint to get security alerts with filtering"""
     
-    alerts = RequestLogService.get_security_alerts(
-        db=db,
-        limit=limit,
-        offset=offset,
-        alert_type=alert_type
-    )
-    
-    return {
-        "alerts": alerts,
-        "total": len(alerts),
-        "limit": limit,
-        "offset": offset,
-        "filters": {
-            "alert_type": alert_type
+    try:
+        alerts = RequestLogService.get_security_alerts(
+            db=db,
+            limit=limit,
+            offset=offset,
+            alert_type=alert_type
+        )
+        
+        # Get total count for pagination
+        from app.db.request_log_models import SecurityAlert
+        
+        query = db.query(SecurityAlert)
+        if alert_type:
+            query = query.filter(SecurityAlert.alert_type == alert_type)
+        
+        total = query.count()
+        
+        return {
+            "alerts": alerts,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "filters": {
+                "alert_type": alert_type
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "alerts": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "error": str(e),
+            "filters": {
+                "alert_type": alert_type
+            }
+        }
 
 @router.post("/security/block-ip")
 async def block_ip_address(

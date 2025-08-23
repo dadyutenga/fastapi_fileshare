@@ -262,7 +262,7 @@ class RequestLogService:
         return [
             {
                 "id": req.id,
-                "timestamp": req.timestamp,
+                "timestamp": req.timestamp.isoformat() if req.timestamp else None,
                 "method": req.method,
                 "endpoint": req.endpoint,
                 "status_code": req.status_code,
